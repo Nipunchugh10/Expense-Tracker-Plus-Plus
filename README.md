@@ -1,168 +1,119 @@
-# Expense Tracker Plus
-An interactive, cross-platform C++ desktop application for personal finance management, budgeting, and interactive data analytics. Built on top of **Dear ImGui**, **OpenGL 3**, and **ImPlot**, this project provides a hardware-accelerated, responsive, and visually appealing native user interface to track expenses, manage recurring payments, and analyze spending habits.
+# Expense Tracker Plus Plus
+
+A native Windows desktop app for personal finance: track expenses and income, manage subscriptions, set category budgets, save toward goals and forecast your month-end spending. It is written in C++17 with Dear ImGui, ImPlot, GLFW and OpenGL 3.3, and all data stays on your computer.
 
 ---
 
-## Key Features
-- **Comprehensive Expense CRUD**: Log, edit, and delete transactions with details including description, amount, date, category, and currency (multi-currency support).
-- **Interactive Data Analytics (ImPlot)**:
-  - Monthly spending trends.
-  - Category breakdown via donut/pie graphs.
-  - Distribution of expenditures by currency.
-  - Top 10 high-value transactions list.
-- **Budgeting System**: Establish and manage monthly financial limits to track target vs. actual spending.
-- **Smart Recurring Transactions**:
-  - Automatically generate recurring transactions based on customizable frequency criteria (Daily, Weekly, Monthly, Yearly).
-  - Handles scheduling ranges (start date to end date).
-- **Data Portability (Import/Export)**:
-  - Local persistence via JSON serialization (auto-saves changes periodically and on shutdown).
-  - Export and Import transactions to/from CSV (fully compatible with Microsoft Excel, Google Sheets, etc.).
-- **Responsive Native Desktop UI**: Fully interactive multi-tab interface (Dashboard, Expenses, Budget, Analytics) with customizable text scaling and keyboard navigation.
+## Features
 
----
+| Area | What you get |
+| --- | --- |
+| **Transactions** | Add, edit and delete expenses, **subscriptions**, income and transfers (subscription payments count as spending in every total and budget). Filter by text, type, category, currency, date range and amount. Sortable table that handles large ledgers. Ctrl+Z / Ctrl+Y undo and redo. |
+| **Subscriptions** | Recurring bills that renew every day, every 7/14/28/30/84/90/180 days, on the same date every month or year, or after any custom number of days, at a set **time (HH:MM)**. For each subscription you choose: **automatic** (each renewal is added to Expenses at its renewal time) or **manual** (due payments are listed with *Record payment* / *Skip*). From 7 days before a renewal, the Subscriptions tab and the Dashboard show *"N days remaining until next renewal"*. Also shows your monthly burn rate and annual projection; subscriptions can be paused and resumed. |
+| **Multi-currency** | Every total is converted to a base currency you choose. Live exchange rates are downloaded at launch when you are online (open.er-api.com, falling back to frankfurter.dev/ECB). You can also sync on demand or edit rates by hand. Transactions in a currency with no rate are left out of totals and flagged, never silently mixed in. |
+| **Budgets** | An overall monthly budget plus per-category budgets. Status is Safe (< 75%), Warning (75-99%) or Over (>= 100%), and the over-budget amount is shown. |
+| **Cash flow** | Income, expenses, net cash flow and savings rate for any month or year. |
+| **Goals** | Savings goals with progress, and the monthly deposit needed to reach each target date. |
+| **Forecast** | Month-end projection based on your daily discretionary spending plus scheduled bills, with a warning if you will exceed your budget. |
+| **Auto-categorization** | Suggests a category from keywords in the description (for example Swiggy → Dining, Uber → Transportation). You can add your own rules. |
+| **Reports** | One-click monthly report as self-contained HTML or Markdown. |
+| **Themes** | Dark Modern, Tokyo Night, Catppuccin, Nord Slate, OLED Black, Light Clean. |
+| **Import / export** | CSV import (RFC 4180, Windows-1252 files, legacy exports, duplicate detection) and CSV/JSON export. |
+| **Welcome screen** | On first launch, the left half introduces every feature in an animated 3-second carousel, and the right half offers **New user, fresh start** or **I have a backup**. You can reopen it from **View > Welcome Screen**. |
+| **Move to a new computer** | **File > Export Full Backup...** writes one file with everything: transactions, subscriptions, budgets, goals, exchange rates, category rules and settings. On the new computer, choose **I have a backup** on the welcome screen and pick that file. |
+| **Restore from backup** | **File > Restore from Backup...** opens any backup or exported JSON (current or older format). The file is read in the background and you see what's in it first (transactions, dates, subscriptions, goals, skipped records). Then you choose **Replace** (your data becomes the backup) or **Merge** (only what's missing is added: duplicates are skipped, incoming items get fresh IDs, your budgets and rates are kept). Your current data file is always copied to `expenses.before-restore-<date>.json` first. |
 
-## Project Directory Structure
-The repository follows a clean, modular object-oriented project design separating the Core Logic, User Interface, and Serialization layers.
+## Privacy
 
-```text
-Expense_Tracker/
-├── CMakeLists.txt         # Main build configuration script (C++17)
-├── build.bat              # Simple Windows compile script (Legacy compile fallback)
-├── data/                  # Local persistence directory
-│   └── expenses.json      # Auto-saved JSON ledger database
-├── include/               # Header Files (.h)
-│   ├── App.h              # Application main loop & Window Orchestrator
-│   ├── Budget.h           # Budget tracker module
-│   ├── CsvIO.h            # CSV data parser & serializer
-│   ├── Expense.h          # Data structures for Expenses & Dates
-│   ├── ExpenseTracker.h   # Core tracker backend & state manager
-│   ├── FilterCriteria.h   # Expense sorting and filter structure
-│   ├── JsonIO.h           # JSON parser & serialization backend
-│   ├── RecurringRule.h    # Recurring transaction scheduler logic
-│   ├── Utils.h            # Date formatting and helper functions
-│   └── Tabs/              # ImGui GUI Tab views
-│       ├── AnalyticsTab.h
-│       ├── BudgetTab.h
-│       ├── DashboardTab.h
-│       └── ExpensesTab.h
-├── src/                   # Source Files (.cpp)
-│   ├── App.cpp
-│   ├── Budget.cpp
-│   ├── CsvIO.cpp
-│   ├── Expense.cpp
-│   ├── ExpenseTracker.cpp
-│   ├── FilterCriteria.cpp
-│   ├── JsonIO.cpp
-│   ├── RecurringRule.cpp
-│   ├── Utils.cpp
-│   ├── main.cpp           # App Entrypoint (OpenGL Context, ImGui, ImPlot setup)
-│   └── Tabs/              # ImGui UI Implementation
-│       ├── AnalyticsTab.cpp
-│       ├── BudgetTab.cpp
-│       ├── DashboardTab.cpp
-│       └── ExpensesTab.cpp
-└── third_party/           # Vendor Dependencies (GLFW, Dear ImGui, ImPlot, nlohmann/json)
+The only network request the app makes is an anonymous download of the latest USD exchange rates at launch. No personal data is sent. Turn it off with **Tools > Sync Rates on Launch**. Without internet, the app keeps using the last saved rates.
+
+## Data safety
+
+- **Location.** Data is stored in `%APPDATA%\ExpenseTrackerPlusPlus\` (`expenses.json`, `category_rules.json`, `settings.json`), whichever folder you start the app from. To keep data somewhere else, set the environment variable `EXPENSE_TRACKER_DATA_DIR`. **File > Open data folder** opens the folder.
+- **Coming from "Expense Tracker Plus"?** On first launch, the data in the old `%APPDATA%\ExpenseTrackerPlus` folder is copied automatically. The old folder is left untouched as a backup.
+- **Atomic saves.** Every save writes a temporary file, flushes it to disk and then replaces the old file. The previous version is kept as `expenses.json.bak`. Changes also auto-save within a minute.
+- **Unreadable files.** If a file can't be read, the app backs it up, disables saving and asks what to do. It never overwrites the damaged file.
+- **Files from a newer version.** These open read-only, so no data is lost.
+- **Upgrades.** Files from earlier versions of this app load without changes. A one-time backup (`expenses.v1.bak.json`) is made before the first upgrade.
+- **Reset Everything.** A timestamped backup is written before anything is deleted.
+
+## Large ledgers
+
+Totals, charts, the transaction list and the forecast are recalculated only when data changes, not on every frame. CSV imports and backup restores are read on a background thread. Measured on the development laptop with **200,000 transactions** (a 49 MB file covering 2016–2026):
+
+- The window opens immediately.
+- Idle CPU is about 1% of the machine on the Dashboard, Expenses and Analytics tabs.
+- Memory is about 160 MB, briefly peaking at about 380 MB during a save.
+- Auto-save completes normally.
+
+## Build and run (Windows 10/11)
+
+Requirements: a MinGW-w64 GCC toolchain with C++17 support and CMake 3.16+ on your `PATH`. GLFW, Dear ImGui, ImPlot and nlohmann/json are bundled in `third_party/`, so nothing else needs to be installed.
+
+```bat
+git clone https://github.com/Nipunchugh10/Expense_Tracker.git Expense_Tracker_Plus_Plus
+cd Expense_Tracker_Plus_Plus
+run.bat
 ```
 
----
+`run.bat` (or `run.ps1`) does an incremental build and then starts `build\bin\Expense_Tracker_Plus_Plus.exe`. If the build fails, it doesn't start the app. To build only:
 
-## Tech Stack & Dependencies
-* **Language**: C++17
-* **Build System**: CMake 3.16+
-* **GUI Toolkit**: [Dear ImGui](https://github.com/ocornut/imgui) (v1.89+ with Docking/Viewport features)
-* **Plotting Engine**: [ImPlot](https://github.com/epezent/implot) (Hardware-accelerated charting library)
-* **Window & Input**: GLFW 3
-* **Graphics API**: OpenGL 3.3 Core Profile
-* **JSON Library**: [nlohmann/json](https://github.com/nlohmann/json) (Modern JSON for C++)
+```bat
+build.bat
+```
 
----
+or by hand:
 
-## Getting Started & Compilation
+```bat
+cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+```
 
-### Prerequisites
-Make sure you have a modern C++ compiler supporting C++17 (e.g., GCC/MinGW, Clang, or MSVC) and CMake installed on your path.
+First-party code is compiled with `-Wall -Wextra -Wpedantic -Werror`, so any new warning fails the build.
 
-#### Windows (using MinGW Makefiles)
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/Nipunchugh10/Expense_Tracker.git
-   cd Expense_Tracker
-   ```
-2. **Configure with CMake**:
-   ```bash
-   mkdir build
-   cd build
-   cmake -G "MinGW Makefiles" ..
-   ```
-3. **Build the Project**:
-   ```bash
-   cmake --build . --config Release
-   ```
-4. **Run the Executable**:
-   ```bash
-   cd bin
-   ./Expense_Tracker.exe
-   ```
+### Tests
 
-#### Linux / macOS
-1. Install GLFW3 dependency via package manager:
-   - *Ubuntu/Debian*: `sudo apt-get install libglfw3-dev`
-   - *macOS (Homebrew)*: `brew install glfw`
-2. Configure, build, and run the project:
-   ```bash
-   mkdir build && cd build
-   cmake ..
-   make -j$(nproc)
-   ./bin/Expense_Tracker
-   ```
+```bat
+ctest --test-dir build --output-on-failure
+```
 
----
+The unit tests (`tests/`) cover dates, money precision, validation, JSON load/save (including corrupted and hostile files), atomic writes, CSV import and export, the recurring engine, currency conversion, budgets, goals, the forecast, auto-categorization, undo/redo and report escaping.
 
-## Architecture & System Design
+> **Note:** If Windows *Smart App Control* is on, it may block unsigned programs, both the executables you compile (the app and the test runner) and the unsigned MinGW tools themselves (`mingw32-make.exe`, `windres.exe`). Windows then shows "An Application Control policy has blocked this file" and the build fails with "unknown error". Smart App Control can only be turned off (Windows Security > App & browser control), and Windows does not allow turning it back on without a reset, so decide before you switch it off.
 
-### 1. Data Model (`Expense` & `RecurringRule`)
-- `Expense` stores individual transaction records with attributes (`description`, `amount`, `category`, `currency`, `date`).
-- `RecurringRule` defines how often a transaction repeats. When the application loads, `ExpenseTracker::GenerateRecurringExpenses` evaluates active rules against the current system date and automatically fills in occurrences.
+## Project layout
 
-### 2. State Controller (`ExpenseTracker`)
-Acts as a central manager (Model-View-Controller design pattern). It exposes APIs for creating, reading, updating, sorting, filtering, and performing high-performance analytics query aggregations. It maintains an internal *dirty* flag indicating unsaved state modifications.
+```text
+include/, src/
+  Money, Validation, Utils        amounts in minor units, shared validators, dates, UTF-8, CSV parsing
+  Expense, RecurringRule, Goal    data model
+  Budget, CurrencyManager         category/overall budgets, exchange rates
+  ExpenseTracker                  the only way to change data; all totals and the forecast
+  JsonIO, CsvIO, AtomicFile, Paths  saving, import/export, file locations
+  AutoCategorizer, CommandManager, ReportGenerator, Settings
+  App, AppContext, UiHelpers, ThemeManager, main   window, menus, dialogs, themes
+  Tabs/                           Dashboard, Expenses, Subscriptions, Budget, Goals, Analytics
+tests/                            unit tests and fixture files
+resources/                        app icon (make_icon.ps1 regenerates app_icon.ico) and Windows version info
+third_party/                      GLFW, Dear ImGui, ImPlot, nlohmann/json (vendored, unmodified)
+```
 
-### 3. File I/O Engine (`JsonIO` & `CsvIO`)
-- **JSON Serialization**: Integrates with `nlohmann_json` to marshal/unmarshal arrays of expenses, budgets, and rules.
-- **CSV Export/Import**: Generates RFC 4180-compliant comma-separated values to support seamless data migration.
+## Data format
 
-### 4. UI Layer (`App` & `Tabs`)
-The UI is divided into 4 core tab components:
-- **Dashboard**: High-level financial status widget, recent transactions, auto-save status indicators, and budget progression bars.
-- **Expenses**: Comprehensive searchable table layout. Supports filter criteria query-by-category, inline search, and multi-column sorting.
-- **Budget**: Set monthly targets, select specific months, and review real-time budget utilization cards.
-- **Analytics**: Beautiful dashboard containing multiple ImPlot widgets representing visual metrics.
+`expenses.json` (schema version 2) holds transactions (with `type`: `expense` / `income` / `transfer`), subscriptions, overall and category budgets, goals, the base currency and exchange rates (stored against USD). Compatibility rules:
 
----
-
-## Visual Layout Preview
-The interface is designed with a sleek dark theme style:
-- **Menu Bar**: Top-aligned file management controls (Save, Import/Export CSV, Export JSON).
-- **Dashboard Widgets**: Clean summaries of total expenses, active budget tracking, and list of transactions.
-- **Dynamic Charts**: Interactive ImPlot charts featuring tooltip hovers, panning, zooming, and legend toggles for financial analysis.
-- **Status Bar**: Live status tracking indicating unsaved modifications or auto-save intervals.
-
----
-
-## Roadmap / Future Scope
-* **Smart Categorization**: Integrate basic rule-based or machine learning predictions to auto-categorize imported transactions.
-* **Database Backend**: Migrate from static JSON file persistence to a lightweight SQLite database for scaling to thousands of records.
-* **Dark/Light Mode Toggle**: Allow users to dynamically transition between modern themes.
-* **Goal Tracking**: Create sub-accounts or target savings buckets (e.g., saving for travel, electronics).
-
----
+- Files without a `version` (older releases) load unchanged.
+- A missing `type` means expense.
+- The legacy monthly `budgets` object is still read and is also written, for older builds.
+- Invalid records are skipped and listed under **Details** in the status bar. They never crash the app.
 
 ## License
-This project is open-source and available under the [MIT License](LICENSE).
 
----
+MIT. See [LICENSE](LICENSE).
 
 ## Acknowledgments
-* **Dear ImGui** by Omar Cornut for the exceptional GUI framework.
-* **ImPlot** by Evan Pezent for interactive C++ plotting capabilities.
-* **nlohmann/json** by Niels Lohmann for seamless modern C++ JSON manipulation.
+
+- [Dear ImGui](https://github.com/ocornut/imgui) by Omar Cornut
+- [ImPlot](https://github.com/epezent/implot) by Evan Pezent
+- [GLFW](https://www.glfw.org/)
+- [nlohmann/json](https://github.com/nlohmann/json) by Niels Lohmann

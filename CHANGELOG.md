@@ -1,0 +1,37 @@
+# Changelog
+
+## 2.0.0
+
+The app was renamed **Expense Tracker Plus Plus** and largely rewritten.
+
+### Added
+- Income and transfers, cash flow and savings rate.
+- Subscriptions with renewal time, flexible renewal periods, automatic or manual recording and renewal reminders.
+- Multi-currency totals with live exchange-rate sync (open.er-api.com, frankfurter.dev fallback).
+- Category budgets, savings goals and a month-end forecast.
+- Auto-categorization with user-defined rules.
+- Undo / redo for transactions.
+- HTML and Markdown monthly reports.
+- Six themes.
+- Welcome screen with a feature carousel.
+- Full backup export, and restore from backup with Replace or Merge.
+- App icon and Windows version information.
+- Unit tests (`tests/`, run with `ctest`).
+- `run.bat` / `run.ps1`: incremental build, then start.
+
+### Changed
+- Amounts are stored as integer minor units, so totals are exact.
+- One shared set of validators for every input path.
+- Saves are atomic, with a `.bak` copy. Unreadable files are backed up and never overwritten. Files from a newer version open read-only.
+- Data now lives in `%APPDATA%\ExpenseTrackerPlusPlus` (override with `EXPENSE_TRACKER_DATA_DIR`). Data from `%APPDATA%\ExpenseTrackerPlus` is migrated automatically.
+- CSV import follows RFC 4180, detects Windows-1252 and duplicates, and guards against formula injection.
+- Totals, charts and lists are recomputed only when data changes, so 200,000 transactions stay responsive.
+
+### Fixed
+- CSV imports being lost on restart.
+- Duplicate transaction IDs.
+- A crash on a malformed JSON file.
+- Month-end drift in recurring bills, and recurring bills that never ran.
+- A hard-coded `$` currency symbol.
+- A broken `build.bat` and a README that did not match the code.
+- Merging the same backup twice re-adding subscription payments.

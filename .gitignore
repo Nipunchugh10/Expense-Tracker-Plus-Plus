@@ -1,5 +1,5 @@
 # ============================================================
-#  Expense Tracker — .gitignore
+#  Expense Tracker Plus Plus — .gitignore
 #  C++ / CMake / OpenGL / Dear ImGui / Windows Desktop Project
 # ============================================================
 
@@ -77,10 +77,11 @@ DerivedData/
 .settings/
 
 # ── Compiler / Linker Artifacts ───────────────────────────────
-*.d           # Dependency files
-*.i           # Pre-processed C/C++
-*.s           # Assembly outputs
-*.su          # Stack usage analysis
+# Dependency files, pre-processed C/C++, assembly output, stack usage
+*.d
+*.i
+*.s
+*.su
 
 # ── Static & Shared Library Artifacts ────────────────────────
 lib*.a
@@ -127,3 +128,14 @@ $RECYCLE.BIN/
 # ── Testing Artifacts ─────────────────────────────────────────
 Testing/
 CTestCostData.txt
+
+# ── Local Planning & Requirements ─────────────────────────────
+new_Requirements.md
+
+# ── Python caches (e.g. from vendored debugger scripts) ──────
+__pycache__/
+*.pyc
+
+# ── Private session notes (Claude working state) ─────────────
+Session_StateA.md
+qa_plan.md
