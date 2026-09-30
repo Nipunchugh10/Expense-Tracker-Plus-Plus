@@ -4,6 +4,17 @@ A native Windows desktop app for personal finance: track expenses and income, ma
 
 ---
 
+## Download
+
+The latest version is **[v2.0.0](https://github.com/Nipunchugh10/Expense-Tracker-Plus-Plus/releases/latest)**, the first public release. To try it without building anything:
+
+1. Open the [Releases page](https://github.com/Nipunchugh10/Expense-Tracker-Plus-Plus/releases/latest) and download `Expense_Tracker_Plus_Plus-v2.0.0-win64.zip`.
+2. Unzip it anywhere and run `Expense_Tracker_Plus_Plus.exe`. There is no installer and nothing else to install. It needs 64-bit Windows 10 or 11.
+
+The release is not code-signed yet, so Windows SmartScreen may show "Windows protected your PC". Click **More info**, then **Run anyway**. If Smart App Control is on, Windows may block it completely (see the note under [Tests](#tests)). The release notes list the SHA-256 checksum of the zip so you can verify your download.
+
+---
+
 ## Features
 
 | Area | What you get |
@@ -51,7 +62,7 @@ Totals, charts, the transaction list and the forecast are recalculated only when
 Requirements: a MinGW-w64 GCC toolchain with C++17 support and CMake 3.16+ on your `PATH`. GLFW, Dear ImGui, ImPlot and nlohmann/json are bundled in `third_party/`, so nothing else needs to be installed.
 
 ```bat
-git clone https://github.com/Nipunchugh10/Expense_Tracker.git Expense_Tracker_Plus_Plus
+git clone https://github.com/Nipunchugh10/Expense-Tracker-Plus-Plus.git Expense_Tracker_Plus_Plus
 cd Expense_Tracker_Plus_Plus
 run.bat
 ```
