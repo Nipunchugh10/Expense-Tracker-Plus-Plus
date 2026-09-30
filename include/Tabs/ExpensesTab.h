@@ -1,52 +1,76 @@
 #pragma once
-#include "FilterCriteria.h"
+#include <string>
+#include <vector>
+#include "AppContext.h"
 #include "Expense.h"
+#include "FilterCriteria.h"
 
 class ExpenseTracker;
 
+// Add/Edit form state (std::string buffers: no fixed-size truncation, P0-B3).
+struct ExpenseForm {
+    TransactionType type = TransactionType::Expense;
+    std::string description;
+    double      amount = 0.0;
+    Date        date;
+    std::string category;
+    std::string currency;
+    int         recurringRuleId = 0;
+
+    bool        categoryAutoFilled = false;
+    std::string matchedKeyword;
+    bool        remember = false;
+    std::string rememberKeyword;
+    std::string error;
+
+    void Reset(const Date& today, const std::string& defaultCurrency);
+    void LoadFrom(const Expense& e);
+    bool Build(Expense& out);   // validates with the shared validators
+};
+
 class ExpensesTab {
 public:
-    void Render(ExpenseTracker& tracker);
+    void Render(AppContext& ctx);
 
 private:
-    void RenderFilterBar(ExpenseTracker& tracker);
-    void RenderTable(ExpenseTracker& tracker);
-    void RenderAddPopup(ExpenseTracker& tracker);
-    void RenderEditPopup(ExpenseTracker& tracker);
-    void RenderDeleteConfirm(ExpenseTracker& tracker);
+    void RenderFilterBar(AppContext& ctx);
+    void RenderTable(AppContext& ctx);
+    void RenderFormFields(AppContext& ctx, ExpenseForm& form, bool isEdit);
+    void RenderAddPopup(AppContext& ctx);
+    void RenderEditPopup(AppContext& ctx);
+    void RenderDeleteConfirm(AppContext& ctx);
+    void ApplyRememberRule(AppContext& ctx, const ExpenseForm& form);
+    void SortRows();
 
     FilterCriteria filter;
+    bool   useDateFilter = false;
+    Date   filterFrom;
+    Date   filterTo;
+    double filterMin = 0.0;
+    double filterMax = 0.0;   // 0 = no maximum
+    bool   filterInitialized = false;
 
-    // Add form state
-    char   addDesc[256] = {};
-    double addAmount = 0.0;
-    int    addDate[3] = {2026, 6, 10}; // y, m, d
-    char   addCategory[128] = {};
-    char   addCurrency[8] = "USD";
-    bool   openAddPopup = false;
+    ExpenseForm addForm;
+    ExpenseForm editForm;
+    int  editID = 0;
+    bool openAdd = false;
+    bool openEdit = false;
 
-    // Edit form state
-    int    editID = 0;
-    char   editDesc[256] = {};
-    double editAmount = 0.0;
-    int    editDate[3] = {2026, 1, 1};
-    char   editCategory[128] = {};
-    char   editCurrency[8] = "USD";
-    bool   openEditPopup = false;
-
-    // Delete confirmation
     int  deleteID = 0;
-    bool openDeleteConfirm = false;
+    std::string deleteLabel;
+    bool openDelete = false;
 
-    // Sorting
-    int sortCol = -1;
-    bool sortAsc = true;
+    int  sortCol = 1;
+    bool sortAsc = false;
 
-    // Filter bar
-    char searchBuf[256] = {};
-    int  filterDateFrom[3] = {1900, 1, 1};
-    int  filterDateTo[3]   = {2100, 12, 31};
-    char filterCategory[128] = {};
-    double filterAmountMin = 0.0;
-    double filterAmountMax = 1e12;
+    // Cached filtered/sorted rows: rebuilt only when the ledger revision, the
+    // filter or the sort order changes.
+    std::vector<const Expense*> rows;
+    unsigned long long cachedRevision = ~0ULL;
+    FilterCriteria cachedFilter;
+    int   sortedCol = -1;
+    bool  sortedAsc = false;
+    Money footerSpent = 0;
+    Money footerEarned = 0;
+    int   footerExcluded = 0;
 };

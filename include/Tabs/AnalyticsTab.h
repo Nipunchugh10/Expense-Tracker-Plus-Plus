@@ -1,11 +1,15 @@
 #pragma once
-
-class ExpenseTracker;
+#include "AppContext.h"
 
 class AnalyticsTab {
 public:
-    void Render(ExpenseTracker& tracker);
+    void Render(AppContext& ctx);
 
 private:
-    int selectedYear = 2026;
+    void RenderForecast(AppContext& ctx);
+    void RenderBreakdowns(AppContext& ctx);
+    void RenderTrendAndTop(AppContext& ctx);
+
+    int selectedYear = 0;
+    int forecastMonth = 0;
 };

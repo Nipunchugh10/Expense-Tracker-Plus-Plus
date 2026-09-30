@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "expenses": [
+    {"id": 1, "description": "Valid", "amount": 10, "date": "2025-01-01", "category": "A", "currency": "INR"},
+    {"id": 1, "description": "Duplicate ID", "amount": 11, "date": "2025-01-02", "category": "A", "currency": "INR"},
+    {"id": 2, "description": "String amount", "amount": "12", "date": "2025-01-03"},
+    {"id": 3, "description": "Bad date", "amount": 5, "date": "abcd-ef-gh"},
+    {"id": 4, "description": "Month 13", "amount": 5, "date": "2025-13-01"},
+    {"id": 5, "amount": 5, "date": "2025-01-01"},
+    {"id": 6, "description": "Negative", "amount": -5, "date": "2025-01-01"},
+    "not an object",
+    42,
+    {"id": 7, "description": "Bad currency", "amount": 5, "date": "2025-01-01", "currency": "RUPEES"},
+    {"id": 8, "description": "Unknown type", "amount": 5, "date": "2025-01-01", "type": "gift"},
+    {"id": "nine", "description": "String id", "amount": 5, "date": "2025-01-01"}
+  ],
+  "budgets": {"abc": 100, "202501": "lots", "202502": 250, "209913": 5},
+  "categoryBudgets": {"2025-01": {"A": 50, "B": "x"}, "bad": {"C": 1}},
+  "recurringRules": [
+    {"id": 1, "description": "Rule", "amount": 5, "frequency": "Hourly", "startDate": "2025-01-01"},
+    {"description": "Ok rule", "amount": 9, "frequency": "Monthly", "startDate": "2025-01-31"}
+  ],
+  "goals": [
+    {"title": "No date", "targetAmount": 100},
+    {"title": "Laptop", "targetAmount": 1000, "targetDate": "2030-12-31"}
+  ]
+}

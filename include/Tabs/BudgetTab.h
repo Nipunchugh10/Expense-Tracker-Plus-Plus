@@ -1,15 +1,17 @@
 #pragma once
+#include <string>
+#include "AppContext.h"
 
-class ExpenseTracker;
-
+// Monthly category budget workstation (Step 3). Reads budgets from the
+// tracker every frame; no cached copies that can go stale (P0-E1).
 class BudgetTab {
 public:
-    void Render(ExpenseTracker& tracker);
+    void Render(AppContext& ctx);
 
 private:
-    int selectedYear = 2026;
-    double budgetInputs[12] = {}; // index 0 = Jan, 11 = Dec
-    bool   initialized = false;
-
-    void LoadBudgets(ExpenseTracker& tracker);
+    int selectedYear = 0;
+    int selectedMonth = 0;
+    std::string newCategory;
+    double newLimit = 0.0;
+    std::string addError;
 };

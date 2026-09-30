@@ -1,44 +1,33 @@
 #include "FilterCriteria.h"
 #include "Utils.h"
+#include <utility>
 
 bool FilterCriteria::Matches(const Expense& e) const {
-    // Text search (description or category)
-    if (!searchText.empty()) {
-        if (!Utils::ContainsCI(e.GetDescription(), searchText) &&
-            !Utils::ContainsCI(e.GetCategory(), searchText)) {
-            return false;
-        }
-    }
-
-    // Date range
-    if (e.GetDate() < dateFrom || e.GetDate() > dateTo) {
+    if (!searchText.empty() &&
+        !Utils::ContainsCI(e.GetDescription(), searchText) &&
+        !Utils::ContainsCI(e.GetCategory(), searchText)) {
         return false;
     }
-
-    // Category filter
-    if (!category.empty() && Utils::ToLower(e.GetCategory()) != Utils::ToLower(category)) {
-        return false;
-    }
-
-    // Amount range
-    if (e.GetAmount() < amountMin || e.GetAmount() > amountMax) {
-        return false;
-    }
-
-    // Currency
-    if (!currency.empty() && Utils::ToLower(e.GetCurrency()) != Utils::ToLower(currency)) {
-        return false;
-    }
-
+    if (e.GetDate() < dateFrom || e.GetDate() > dateTo) return false;
+    if (!category.empty() && !Utils::EqualsCI(e.GetCategory(), category)) return false;
+    if (!currency.empty() && !Utils::EqualsCI(e.GetCurrency(), currency)) return false;
+    if (e.GetAmount() < amountMin || e.GetAmount() > amountMax) return false;
+    if (type >= 0 && static_cast<int>(e.GetType()) != type) return false;
     return true;
 }
 
+bool FilterCriteria::operator==(const FilterCriteria& o) const {
+    return searchText == o.searchText && dateFrom == o.dateFrom && dateTo == o.dateTo && category == o.category &&
+           currency == o.currency && amountMin == o.amountMin && amountMax == o.amountMax && type == o.type;
+}
+
 void FilterCriteria::Reset() {
-    searchText.clear();
-    dateFrom = {1900, 1, 1};
-    dateTo   = {2100, 12, 31};
-    category.clear();
-    amountMin = 0.0;
-    amountMax = 1e12;
-    currency.clear();
+    *this = FilterCriteria();
+}
+
+bool FilterCriteria::Normalize() {
+    bool swapped = false;
+    if (dateTo < dateFrom) { std::swap(dateFrom, dateTo); swapped = true; }
+    if (amountMax < amountMin) { std::swap(amountMin, amountMax); swapped = true; }
+    return swapped;
 }

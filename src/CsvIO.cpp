@@ -1,106 +1,139 @@
 #include "CsvIO.h"
 #include "ExpenseTracker.h"
 #include "Utils.h"
-#include <fstream>
-#include <sstream>
+#include "Validation.h"
+#include <map>
 
 namespace CsvIO {
 
-bool Export(const ExpenseTracker& tracker, const std::string& filepath) {
-    std::ofstream file(filepath);
-    if (!file.is_open()) return false;
+namespace {
 
-    file << "ID,Date,Description,Amount,Currency,Category\n";
-    for (auto& e : tracker.GetExpensesRef()) {
-        file << e.GetID() << ","
-             << e.GetDate().ToString() << ","
-             << Utils::EscapeCSVField(e.GetDescription()) << ","
-             << e.GetAmount() << ","
-             << Utils::EscapeCSVField(e.GetCurrency()) << ","
-             << Utils::EscapeCSVField(e.GetCategory()) << "\n";
+struct Columns {
+    int id = -1, date = -1, type = -1, description = -1, amount = -1, currency = -1, category = -1, month = -1;
+};
+
+bool DetectHeader(const std::vector<std::string>& row, Columns& cols) {
+    std::map<std::string, int*> names = {
+        {"id", &cols.id}, {"date", &cols.date}, {"type", &cols.type},
+        {"description", &cols.description}, {"amount", &cols.amount},
+        {"currency", &cols.currency}, {"category", &cols.category}, {"month", &cols.month},
+    };
+    bool any = false;
+    for (size_t i = 0; i < row.size(); i++) {
+        auto it = names.find(Utils::ToLower(Utils::Trim(row[i])));
+        if (it != names.end() && *it->second < 0) {
+            *it->second = static_cast<int>(i);
+            any = true;
+        }
     }
-
-    file.close();
-    return true;
+    return any && cols.amount >= 0 && cols.description >= 0;
 }
 
-bool Import(ExpenseTracker& tracker, const std::string& filepath) {
-    std::ifstream file(filepath);
-    if (!file.is_open()) return false;
+std::string Field(const std::vector<std::string>& row, int index) {
+    if (index < 0 || static_cast<size_t>(index) >= row.size()) return "";
+    return Utils::Trim(Utils::UnprotectCSVField(row[static_cast<size_t>(index)]));
+}
 
-    std::string line;
-    bool firstLine = true;
-    bool oldFormat = false;
-    int loadedCount = 0;
+} // namespace
 
-    while (std::getline(file, line)) {
-        if (line.empty()) continue;
-
-        if (firstLine) {
-            firstLine = false;
-            // Detect format
-            std::string headerLower = Utils::ToLower(line);
-            if (headerLower.find("id") != std::string::npos) {
-                // Check if it's old format (ID,Description,Amount,Month,Category)
-                // or new format (ID,Date,Description,Amount,Currency,Category)
-                oldFormat = (headerLower.find("month") != std::string::npos);
-                continue; // skip header
-            }
-        }
-
-        size_t pos = 0;
-        try {
-            if (oldFormat) {
-                // Old format: ID,Description,Amount,Month,Category
-                std::string idStr    = Utils::ParseCSVField(line, pos);
-                std::string desc     = Utils::ParseCSVField(line, pos);
-                std::string amtStr   = Utils::ParseCSVField(line, pos);
-                std::string monthStr = Utils::ParseCSVField(line, pos);
-                std::string category = Utils::ParseCSVField(line, pos);
-
-                int id       = std::stoi(idStr);
-                double amt   = std::stod(amtStr);
-                int month    = std::stoi(monthStr);
-
-                if (month < 1 || month > 12 || amt < 0) continue;
-
-                Date d;
-                d.year = 2026;
-                d.month = month;
-                d.day = 1;
-
-                tracker.GetExpenses().emplace_back(id, desc, amt, d, category, "USD", 0);
-                int nextID = tracker.GetNextExpenseID();
-                if (id >= nextID) tracker.SetNextExpenseID(id + 1);
-                loadedCount++;
-            } else {
-                // New format: ID,Date,Description,Amount,Currency,Category
-                std::string idStr    = Utils::ParseCSVField(line, pos);
-                std::string dateStr  = Utils::ParseCSVField(line, pos);
-                std::string desc     = Utils::ParseCSVField(line, pos);
-                std::string amtStr   = Utils::ParseCSVField(line, pos);
-                std::string currency = Utils::ParseCSVField(line, pos);
-                std::string category = Utils::ParseCSVField(line, pos);
-
-                int id     = std::stoi(idStr);
-                double amt = std::stod(amtStr);
-                Date d     = Date::FromString(dateStr);
-
-                if (amt < 0) continue;
-                if (currency.empty()) currency = "USD";
-
-                tracker.GetExpenses().emplace_back(id, desc, amt, d, category, currency, 0);
-                int nextID = tracker.GetNextExpenseID();
-                if (id >= nextID) tracker.SetNextExpenseID(id + 1);
-                loadedCount++;
-            }
-        } catch (...) {
-            continue; // skip malformed lines
-        }
+std::string ExportToString(const ExpenseTracker& tracker) {
+    std::string out = "ID,Date,Type,Description,Amount,Currency,Category\r\n";
+    for (auto& e : tracker.GetExpenses()) {
+        out += std::to_string(e.GetID()) + "," +
+               e.GetDate().ToString() + "," +
+               TransactionTypeToString(e.GetType()) + "," +
+               Utils::EscapeCSVField(e.GetDescription(), true) + "," +
+               MoneyUtil::ToDecimalString(e.GetAmount()) + "," +   // fixed 2 decimals, never scientific
+               Utils::EscapeCSVField(e.GetCurrency(), true) + "," +
+               Utils::EscapeCSVField(e.GetCategory(), true) + "\r\n";
     }
+    return out;
+}
 
-    file.close();
-    return loadedCount > 0;
+IoResult Export(const ExpenseTracker& tracker, const std::filesystem::path& filepath) {
+    // UTF-8 BOM so Excel opens non-ASCII text correctly.
+    AtomicWriteOptions opts;
+    opts.keepBackup = false;
+    return WriteFileAtomic(filepath, "\xEF\xBB\xBF" + ExportToString(tracker), opts);
+}
+
+std::string DecodeText(const std::string& raw, bool& convertedFromCp1252) {
+    std::string text = raw;
+    if (text.size() >= 3 && text.compare(0, 3, "\xEF\xBB\xBF") == 0) text.erase(0, 3);
+    convertedFromCp1252 = false;
+    if (!Utils::IsValidUtf8(text)) {
+        text = Utils::Cp1252ToUtf8(text);
+        convertedFromCp1252 = true;
+    }
+    return text;
+}
+
+bool IsLegacyFormat(const std::string& content) {
+    auto rows = Utils::ParseCSV(content);
+    if (rows.empty()) return false;
+    Columns cols;
+    return DetectHeader(rows[0], cols) && cols.month >= 0 && cols.date < 0;
+}
+
+ParseResult Parse(const std::string& content, int legacyYear) {
+    ParseResult result;
+    auto rows = Utils::ParseCSV(content);
+    if (rows.empty()) return result;
+
+    Columns cols;
+    size_t firstData = 0;
+    if (DetectHeader(rows[0], cols)) {
+        firstData = 1;
+    } else {
+        // No header: assume the current export order without a Type column.
+        cols.id = 0; cols.date = 1; cols.description = 2; cols.amount = 3; cols.currency = 4; cols.category = 5;
+    }
+    const bool legacy = cols.month >= 0 && cols.date < 0;
+
+    for (size_t r = firstData; r < rows.size(); r++) {
+        const auto& row = rows[r];
+        const std::string line = "Row " + std::to_string(r + 1) + ": ";
+        auto skip = [&](const std::string& why) {
+            result.skipped++;
+            result.reasons.push_back(line + why);
+        };
+
+        Money amount;
+        std::string amountText = Field(row, cols.amount);
+        if (!MoneyUtil::ParseDecimal(amountText, amount)) { skip("amount '" + amountText + "' is not a number"); continue; }
+        if (amount < 0) { skip("negative amount (set Type to income instead of using a minus sign)"); continue; }
+
+        Date date;
+        if (legacy) {
+            std::string monthText = Field(row, cols.month);
+            int month = 0;
+            for (char c : monthText) {
+                if (c < '0' || c > '9' || month > 12) { month = 0; break; }
+                month = month * 10 + (c - '0');
+            }
+            if (month < 1 || month > 12) { skip("month '" + monthText + "' is not 1-12"); continue; }
+            date = {legacyYear, month, 1};
+        } else {
+            std::string dateText = Field(row, cols.date);
+            if (!Date::TryParse(dateText, date)) { skip("date '" + dateText + "' is not a valid YYYY-MM-DD date"); continue; }
+        }
+
+        TransactionType type = TransactionType::Expense;
+        std::string typeText = Field(row, cols.type);
+        if (!typeText.empty() && !TransactionTypeFromString(typeText, type)) {
+            skip("unknown type '" + typeText + "' (use expense, income or transfer)");
+            continue;
+        }
+
+        std::string currency = Field(row, cols.currency);
+        if (currency.empty()) currency = kDefaultCurrency;
+
+        Expense e(0, Field(row, cols.description), amount, date, Field(row, cols.category), currency, 0, type);
+        std::string why;
+        if (!Validation::NormalizeExpense(e, why)) { skip(why); continue; }
+        result.drafts.push_back(e);
+    }
+    return result;
 }
 
 } // namespace CsvIO

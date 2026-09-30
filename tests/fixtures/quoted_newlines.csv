@@ -1,0 +1,5 @@
+ID,Date,Type,Description,Amount,Currency,Category
+7,2025-05-01,expense,"Line one
+line two, with ""quotes""",12.30,INR,Misc
+8,2025-05-02,income,Salary,"50,000.00",INR,Salary
+9,2025-05-03,expense,Refund,-10,INR,Misc

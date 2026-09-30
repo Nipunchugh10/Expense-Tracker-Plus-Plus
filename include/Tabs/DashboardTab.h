@@ -1,13 +1,12 @@
 #pragma once
-
-class ExpenseTracker;
+#include "AppContext.h"
 
 class DashboardTab {
 public:
-    void Render(ExpenseTracker& tracker);
+    void Render(AppContext& ctx);
 
 private:
-    int selectedYear  = 2026;
-    int selectedMonth = 0; // 0 = all months
+    int  selectedYear = 0;    // initialised from today on first render
+    int  selectedMonth = 0;   // 0 = all months
     bool openResetConfirm = false;
 };
