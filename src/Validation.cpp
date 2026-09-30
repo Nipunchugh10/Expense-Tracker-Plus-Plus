@@ -41,10 +41,13 @@ bool ValidateAmount(double major, Money& out, std::string& error) {
 }
 
 std::string NormalizeText(const std::string& s, size_t maxBytes) {
-    std::string clean = Utils::SanitizeUtf8(s);
-    for (char& c : clean) {
-        unsigned char u = static_cast<unsigned char>(c);
-        if (u < 0x20 || u == 0x7F) c = ' ';
+    std::string raw = Utils::SanitizeUtf8(s);
+    std::string clean;
+    clean.reserve(raw.size());
+    for (size_t i = 0; i < raw.size(); i++) {
+        unsigned char u = static_cast<unsigned char>(raw[i]);
+        if (u == '\r' && i + 1 < raw.size() && raw[i + 1] == '\n') continue;   // CRLF counts as one break
+        clean.push_back((u < 0x20 || u == 0x7F) ? ' ' : raw[i]);
     }
     return Utils::TruncateUtf8(Utils::Trim(clean), maxBytes);
 }

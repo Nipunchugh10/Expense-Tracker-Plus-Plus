@@ -75,6 +75,7 @@ TEST_CASE("Text normalization is UTF-8 safe") {
     CHECK_EQ(cut.size(), size_t(3));
     CHECK(Utils::IsValidUtf8(Validation::NormalizeText("bad\xFF\xFE bytes", 100)));
     CHECK_EQ(Validation::NormalizeText("  a\tb\n ", 100), std::string("a b"));
+    CHECK_EQ(Validation::NormalizeText("one\r\ntwo\rthree", 100), std::string("one two three"));   // CRLF is one break
     std::string longText(1000, 'x');
     CHECK_EQ(Validation::NormalizeText(longText, Validation::kMaxDescriptionBytes), longText);
 }

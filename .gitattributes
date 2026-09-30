@@ -1,0 +1,2 @@
+# Test fixtures must keep their exact bytes (embedded newlines, encodings).
+tests/fixtures/** -text
