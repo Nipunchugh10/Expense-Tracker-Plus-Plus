@@ -81,23 +81,6 @@ The unit tests (`tests/`) cover dates, money precision, validation, JSON load/sa
 
 > **Note:** If Windows *Smart App Control* is on, it may block unsigned programs, both the executables you compile (the app and the test runner) and the unsigned MinGW tools themselves (`mingw32-make.exe`, `windres.exe`). Windows then shows "An Application Control policy has blocked this file" and the build fails with "unknown error". Smart App Control can only be turned off (Windows Security > App & browser control), and Windows does not allow turning it back on without a reset, so decide before you switch it off.
 
-## Project layout
-
-```text
-include/, src/
-  Money, Validation, Utils        amounts in minor units, shared validators, dates, UTF-8, CSV parsing
-  Expense, RecurringRule, Goal    data model
-  Budget, CurrencyManager         category/overall budgets, exchange rates
-  ExpenseTracker                  the only way to change data; all totals and the forecast
-  JsonIO, CsvIO, AtomicFile, Paths  saving, import/export, file locations
-  AutoCategorizer, CommandManager, ReportGenerator, Settings
-  App, AppContext, UiHelpers, ThemeManager, main   window, menus, dialogs, themes
-  Tabs/                           Dashboard, Expenses, Subscriptions, Budget, Goals, Analytics
-tests/                            unit tests and fixture files
-resources/                        app icon (make_icon.ps1 regenerates app_icon.ico) and Windows version info
-third_party/                      GLFW, Dear ImGui, ImPlot, nlohmann/json (vendored, unmodified)
-```
-
 ## Data format
 
 `expenses.json` (schema version 2) holds transactions (with `type`: `expense` / `income` / `transfer`), subscriptions, overall and category budgets, goals, the base currency and exchange rates (stored against USD). Compatibility rules:
