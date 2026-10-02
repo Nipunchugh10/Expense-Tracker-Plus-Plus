@@ -1,0 +1,62 @@
+name: Build and test
+
+# Builds the Windows executable from this repository's source and runs the unit tests.
+# This is the only build that is meant to be submitted for code signing.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MinGW-w64 (UCRT), CMake and Ninja
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+
+      - name: Show toolchain versions
+        run: |
+          gcc --version | head -1
+          cmake --version | head -1
+
+      - name: Configure
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Unit tests
+        env:
+          EXPENSE_TRACKER_DATA_DIR: ${{ runner.temp }}/et_test_data
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Check the executable only uses Windows system DLLs
+        run: |
+          objdump -p build/bin/Expense_Tracker_Plus_Plus.exe | grep "DLL Name" | sort -u
+          if objdump -p build/bin/Expense_Tracker_Plus_Plus.exe | grep -i -E "libstdc|libgcc|libwinpthread"; then
+            echo "Unexpected MinGW runtime DLL dependency"; exit 1
+          fi
+
+      - name: Upload the executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: Expense_Tracker_Plus_Plus-win64
+          path: build/bin/Expense_Tracker_Plus_Plus.exe
+          if-no-files-found: error
