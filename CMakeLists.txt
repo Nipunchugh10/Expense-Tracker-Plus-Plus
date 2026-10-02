@@ -101,6 +101,9 @@ add_executable(${PROJECT_NAME} WIN32
     resources/app.rc                # icon (rupee notebook) + version info
 )
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/resources)
+# The resource file embeds the notices and reads the version from AppInfo.h: rebuild it when they change.
+set_source_files_properties(resources/app.rc PROPERTIES
+    OBJECT_DEPENDS "${CMAKE_SOURCE_DIR}/THIRD_PARTY_NOTICES.txt;${CMAKE_SOURCE_DIR}/include/AppInfo.h")
 target_link_libraries(${PROJECT_NAME} PRIVATE tracker_core imgui implot opengl32 gdi32 comdlg32 user32)
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${APP_WARNINGS}>)
 if(MINGW)

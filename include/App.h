@@ -87,6 +87,7 @@ private:
     void RenderRatesModal();
     void RenderRulesModal();
     void RenderReportModal();
+    void RenderAboutModal();
     void RenderDetailsModal();
     void RenderRestoreModal();
     void RenderBusyModal();
@@ -213,6 +214,8 @@ private:
     bool openRates = false;
     bool openRules = false;
     bool openReport = false;
+    bool openAbout = false;
+    std::string aboutNotices;   // loaded on first use
     std::string newRateCode;
     double      newRateValue = 0.0;
     std::string ratesError;

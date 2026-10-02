@@ -1,4 +1,5 @@
 #include "App.h"
+#include "AppInfo.h"
 #include "CsvIO.h"
 #include "JsonIO.h"
 #include "Paths.h"
@@ -664,6 +665,11 @@ void App::RenderMenuBar() {
         ImGui::EndMenu();
     }
 
+    if (ImGui::BeginMenu("Help")) {
+        if (ImGui::MenuItem("About Expense Tracker Plus Plus...")) openAbout = true;
+        ImGui::EndMenu();
+    }
+
     // Base currency selector (Step 2)
     const float u = ImGui::GetFontSize();
     const float comboW = u * 5.5f;
@@ -726,6 +732,7 @@ void App::RenderModals() {
     RenderRatesModal();
     RenderRulesModal();
     RenderReportModal();
+    RenderAboutModal();
     RenderDetailsModal();
     RenderRestoreModal();
     RenderBusyModal();
@@ -1044,6 +1051,45 @@ void App::RenderReportModal() {
     }
     ImGui::SameLine();
     if (ImGui::Button("Cancel", ImVec2(u * 7, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) ImGui::CloseCurrentPopup();
+    ImGui::EndPopup();
+}
+
+void App::RenderAboutModal() {
+    const char* id = "About Expense Tracker Plus Plus";
+    if (openAbout) {
+        if (aboutNotices.empty()) aboutNotices = Ui::EmbeddedNotices();
+        ImGui::OpenPopup(id);
+        openAbout = false;
+    }
+    const float u = ImGui::GetFontSize();
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(u * 46, u * 34), ImGuiCond_Appearing);
+    if (!ImGui::BeginPopupModal(id, nullptr)) return;
+
+    ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.5f);
+    ImGui::TextUnformatted(AppInfo::kName);
+    ImGui::PopFont();
+    ImGui::Text("Version %s", AppInfo::kVersion);
+    Ui::MutedText("%s", AppInfo::kTagline);
+    ImGui::Text("By %s. Released under the %s.", AppInfo::kPublisher, AppInfo::kLicense);
+    ImGui::Spacing();
+    ImGui::TextLinkOpenURL("Project page on GitHub", AppInfo::kRepoUrl);
+    ImGui::SameLine();
+    ImGui::TextLinkOpenURL("Report a problem or suggest a feature", AppInfo::kIssuesUrl);
+    ImGui::SameLine();
+    ImGui::TextLinkOpenURL("Privacy", AppInfo::kPrivacyUrl);
+    ImGui::Spacing();
+    ImGui::TextUnformatted("Your data stays on this computer. The only network request is the exchange-rate download.");
+    ImGui::TextUnformatted("Rates by ");
+    ImGui::SameLine(0, 0);
+    ImGui::TextLinkOpenURL("ExchangeRate-API", AppInfo::kRatesUrl);
+    ImGui::Spacing();
+    ImGui::SeparatorText("Third-party software and licences");
+    ImGui::BeginChild("##notices", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), ImGuiChildFlags_Borders,
+                      ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::TextUnformatted(aboutNotices.c_str(), aboutNotices.c_str() + aboutNotices.size());
+    ImGui::EndChild();
+    if (ImGui::Button("Close", ImVec2(u * 7, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) ImGui::CloseCurrentPopup();
     ImGui::EndPopup();
 }
 

@@ -2,13 +2,18 @@
 // "GLFW_ICON" is the name GLFW looks up for the window/taskbar icon; as the
 // executable's only icon it is also what Explorer shows for the .exe.
 // Regenerate the icon with: powershell -ExecutionPolicy Bypass -File resources\make_icon.ps1
+// Name, version and publisher come from include/AppInfo.h (edit them there).
 #include <winver.h>
+#include "AppInfo.h"
 
 GLFW_ICON ICON "app_icon.ico"
 
+// The third-party licence texts shown in Help > About (the same file ships in the release zip).
+NOTICES RCDATA "../THIRD_PARTY_NOTICES.txt"
+
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION     2,0,0,0
-PRODUCTVERSION  2,0,0,0
+FILEVERSION     ETP_VERSION_COMMA
+PRODUCTVERSION  ETP_VERSION_COMMA
 FILEFLAGSMASK   0x3fL
 FILEFLAGS       0x0L
 FILEOS          VOS_NT_WINDOWS32
@@ -19,14 +24,14 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName",      "Nipunchugh10"
-            VALUE "FileDescription",  "Expense Tracker Plus Plus"
-            VALUE "FileVersion",      "2.0.0"
+            VALUE "CompanyName",      ETP_PUBLISHER
+            VALUE "FileDescription",  ETP_APP_NAME
+            VALUE "FileVersion",      ETP_VERSION_STRING
             VALUE "InternalName",     "Expense_Tracker_Plus_Plus"
             VALUE "LegalCopyright",   "MIT License"
             VALUE "OriginalFilename", "Expense_Tracker_Plus_Plus.exe"
-            VALUE "ProductName",      "Expense Tracker Plus Plus"
-            VALUE "ProductVersion",   "2.0.0"
+            VALUE "ProductName",      ETP_APP_NAME
+            VALUE "ProductVersion",   ETP_VERSION_STRING
         END
     END
     BLOCK "VarFileInfo"

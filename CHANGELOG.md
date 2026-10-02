@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **Help > About** dialog: version, publisher, licence, links, "Rates by ExchangeRate-API" and the third-party licence texts.
+- `THIRD_PARTY_NOTICES.txt` (also embedded in the executable).
+- GitHub Actions workflow that builds the executable and runs the unit tests.
+- Code signing policy section in the README.
+
+### Changed
+- App name, version and publisher now live in one header (`include/AppInfo.h`), which the Windows version info also reads.
+
 ## 2.0.0
 
 The app was renamed **Expense Tracker Plus Plus** and largely rewritten.

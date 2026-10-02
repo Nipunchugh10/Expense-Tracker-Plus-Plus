@@ -48,4 +48,7 @@ namespace Ui {
     bool SaveFileDialog(const wchar_t* filter, const wchar_t* defaultExt, const std::wstring& defaultName,
                         std::filesystem::path& out);
     void OpenFolder(const std::filesystem::path& dir);
+
+    // The third-party licence texts embedded in the executable (resources/app.rc, NOTICES).
+    std::string EmbeddedNotices();
 }

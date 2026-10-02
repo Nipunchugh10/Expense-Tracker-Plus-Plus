@@ -319,7 +319,18 @@ void OpenFolder(const std::filesystem::path& dir) {
     std::filesystem::create_directories(dir, ec);
     ShellExecuteW(nullptr, L"open", dir.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
+
+std::string EmbeddedNotices() {
+    HRSRC res = FindResourceA(nullptr, "NOTICES", RT_RCDATA);
+    if (!res) return "Third-party notices are not embedded in this build. See THIRD_PARTY_NOTICES.txt.";
+    HGLOBAL mem = LoadResource(nullptr, res);
+    const DWORD size = SizeofResource(nullptr, res);
+    const void* data = mem ? LockResource(mem) : nullptr;
+    if (!data || size == 0) return "Third-party notices could not be loaded. See THIRD_PARTY_NOTICES.txt.";
+    return std::string(static_cast<const char*>(data), size);
+}
 #else
+std::string EmbeddedNotices() { return "See THIRD_PARTY_NOTICES.txt."; }
 void OpenFolder(const std::filesystem::path&) {}
 bool OpenFileDialog(const wchar_t*, std::filesystem::path&, const std::filesystem::path&) { return false; }
 bool SaveFileDialog(const wchar_t*, const wchar_t*, const std::wstring&, std::filesystem::path&) { return false; }
