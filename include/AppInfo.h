@@ -4,8 +4,8 @@
 // Bump ETP_VERSION_STRING and ETP_VERSION_COMMA together.
 
 #define ETP_APP_NAME       "Expense Tracker Plus Plus"
-#define ETP_VERSION_STRING "2.0.0"
-#define ETP_VERSION_COMMA  2,0,0,0
+#define ETP_VERSION_STRING "2.0.1"
+#define ETP_VERSION_COMMA  2,0,1,0
 #define ETP_PUBLISHER      "Nipunchugh10"
 
 #ifdef __cplusplus
@@ -17,7 +17,7 @@ namespace AppInfo {
     inline constexpr const char* kLicense     = "MIT License";
     inline constexpr const char* kRepoUrl     = "https://github.com/Nipunchugh10/Expense-Tracker-Plus-Plus";
     inline constexpr const char* kIssuesUrl   = "https://github.com/Nipunchugh10/Expense-Tracker-Plus-Plus/issues";
-    inline constexpr const char* kPrivacyUrl  = "https://github.com/Nipunchugh10/Expense-Tracker-Plus-Plus#privacy";
+    inline constexpr const char* kPrivacyUrl  = "https://github.com/Nipunchugh10/Expense-Tracker-Plus-Plus/blob/main/PRIVACY.md";
     inline constexpr const char* kRatesUrl    = "https://www.exchangerate-api.com";
 }
 #endif

@@ -36,7 +36,7 @@ The release is not code-signed yet, so Windows SmartScreen may show "Windows pro
 
 ## Privacy
 
-The only network request the app makes is an anonymous download of the latest USD exchange rates at launch. No personal data is sent. Turn it off with **Tools > Sync Rates on Launch**. Without internet, the app keeps using the last saved rates.
+The only network request the app makes is an anonymous download of the latest USD exchange rates at launch. No personal data is sent. Turn it off with **Tools > Sync Rates on Launch**. Without internet, the app keeps using the last saved rates. The full policy is in [PRIVACY.md](PRIVACY.md).
 
 ## Code signing policy
 

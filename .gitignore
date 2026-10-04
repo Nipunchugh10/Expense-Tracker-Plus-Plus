@@ -140,3 +140,14 @@ __pycache__/
 Session_StateA.md
 Session_StateB.md
 qa_plan.md
+
+# Store / signing artifacts: never commit packages, keys or certificates
+*.msix
+*.msixbundle
+*.msixupload
+*.appx
+*.pfx
+*.p12
+*.cer
+*.snk
+packaging/out/

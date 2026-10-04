@@ -1,7 +1,8 @@
 # Generates resources/app_icon.ico (rupee sign on a spiral notebook).
 # Every size is drawn from vectors with GDI+, so small sizes stay crisp.
-# Usage: powershell -ExecutionPolicy Bypass -File resources\make_icon.ps1 [previewPngPath]
-param([string]$PreviewPath = "")
+# Usage: powershell -ExecutionPolicy Bypass -File resources\make_icon.ps1 [previewPngPath] [-StoreAssetsDir dir]
+# With -StoreAssetsDir it also writes the Microsoft Store / MSIX tile logos (see packaging\README).
+param([string]$PreviewPath = "", [string]$StoreAssetsDir = "")
 
 Add-Type -AssemblyName System.Drawing
 $ErrorActionPreference = "Stop"
@@ -147,3 +148,39 @@ foreach ($img in $images) {
 foreach ($img in $images) { $bw.Write([byte[]]$img.Bytes) }
 $bw.Close()
 Write-Host "Wrote $icoPath ($($images.Count) sizes)"
+
+# ── Microsoft Store / MSIX logos ──────────────────────────────────
+function Save-Square([int]$size, [string]$path) {
+    $bmp = New-IconBitmap $size
+    $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bmp.Dispose()
+}
+function Save-Wide([int]$w, [int]$h, [string]$path) {
+    # The icon centred on a transparent canvas, about 70% of the height.
+    $icon = New-IconBitmap ([int]($h * 0.7))
+    $bmp = New-Object System.Drawing.Bitmap $w, $h, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+    $g = [System.Drawing.Graphics]::FromImage($bmp)
+    $g.Clear([System.Drawing.Color]::Transparent)
+    $g.DrawImage($icon, [int](($w - $icon.Width) / 2), [int](($h - $icon.Height) / 2), $icon.Width, $icon.Height)
+    $g.Dispose()
+    $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bmp.Dispose(); $icon.Dispose()
+}
+if ($StoreAssetsDir) {
+    New-Item -ItemType Directory -Force $StoreAssetsDir | Out-Null
+    Save-Square 50  (Join-Path $StoreAssetsDir "StoreLogo.png")
+    Save-Square 44  (Join-Path $StoreAssetsDir "Square44x44Logo.png")
+    foreach ($t in 16, 24, 32, 48, 256) {
+        Save-Square $t (Join-Path $StoreAssetsDir "Square44x44Logo.targetsize-$t.png")
+        Save-Square $t (Join-Path $StoreAssetsDir "Square44x44Logo.targetsize-${t}_altform-unplated.png")
+    }
+    Save-Square 150 (Join-Path $StoreAssetsDir "Square150x150Logo.png")
+    Save-Square 310 (Join-Path $StoreAssetsDir "Square310x310Logo.png")
+    Save-Wide 310 150 (Join-Path $StoreAssetsDir "Wide310x150Logo.png")
+    # Not part of the package: images for the Store listing page itself.
+    $listing = Join-Path $StoreAssetsDir "..\store-listing"
+    New-Item -ItemType Directory -Force $listing | Out-Null
+    Save-Square 300  (Join-Path $listing "AppIcon_300x300.png")
+    Save-Square 1080 (Join-Path $listing "AppIcon_1080x1080.png")
+    Write-Host "Wrote Store logos to $StoreAssetsDir and listing icons to $listing"
+}
