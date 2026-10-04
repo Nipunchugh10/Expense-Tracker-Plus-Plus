@@ -166,6 +166,27 @@ function Save-Wide([int]$w, [int]$h, [string]$path) {
     $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
     $bmp.Dispose(); $icon.Dispose()
 }
+function Save-Poster([int]$w, [int]$h, [string]$path) {
+    # 9:16 Store poster: dark gradient, the icon, the app name and a short tagline.
+    $bmp = New-Object System.Drawing.Bitmap $w, $h, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+    $g = [System.Drawing.Graphics]::FromImage($bmp)
+    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAliasGridFit
+    $bg = New-Object System.Drawing.Drawing2D.LinearGradientBrush (New-Object System.Drawing.Rectangle 0, 0, $w, $h), (Color "#0B1220"), (Color "#1E3A8A"), 90.0
+    $g.FillRectangle($bg, 0, 0, $w, $h)
+    $iconSize = [int]($w * 0.66)
+    $icon = New-IconBitmap $iconSize
+    $g.DrawImage($icon, [int](($w - $iconSize) / 2), [int]($h * 0.16), $iconSize, $iconSize)
+    $center = New-Object System.Drawing.StringFormat
+    $center.Alignment = [System.Drawing.StringAlignment]::Center
+    $titleFont = New-Object System.Drawing.Font "Segoe UI Semibold", ([single]($w * 0.082)), ([System.Drawing.FontStyle]::Regular), ([System.Drawing.GraphicsUnit]::Pixel)
+    $tagFont   = New-Object System.Drawing.Font "Segoe UI", ([single]($w * 0.042)), ([System.Drawing.FontStyle]::Regular), ([System.Drawing.GraphicsUnit]::Pixel)
+    $g.DrawString("Expense Tracker`nPlus Plus", $titleFont, [System.Drawing.Brushes]::White, (New-Object System.Drawing.RectangleF 0, ($h * 0.66), $w, ($h * 0.18)), $center)
+    $g.DrawString("Private. Offline. Yours.", $tagFont, (New-Object System.Drawing.SolidBrush (Color "#BFD3FF")), (New-Object System.Drawing.RectangleF 0, ($h * 0.86), $w, ($h * 0.06)), $center)
+    $g.Dispose()
+    $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bmp.Dispose(); $icon.Dispose()
+}
 if ($StoreAssetsDir) {
     New-Item -ItemType Directory -Force $StoreAssetsDir | Out-Null
     Save-Square 50  (Join-Path $StoreAssetsDir "StoreLogo.png")
@@ -181,6 +202,9 @@ if ($StoreAssetsDir) {
     $listing = Join-Path $StoreAssetsDir "..\store-listing"
     New-Item -ItemType Directory -Force $listing | Out-Null
     Save-Square 300  (Join-Path $listing "AppIcon_300x300.png")
+    Save-Square 150  (Join-Path $listing "AppIcon_150x150.png")
+    Save-Square 71   (Join-Path $listing "AppIcon_71x71.png")
     Save-Square 1080 (Join-Path $listing "AppIcon_1080x1080.png")
+    Save-Poster 720 1080 (Join-Path $listing "Poster_720x1080.png")
     Write-Host "Wrote Store logos to $StoreAssetsDir and listing icons to $listing"
 }
