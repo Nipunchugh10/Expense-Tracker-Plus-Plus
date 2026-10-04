@@ -40,10 +40,10 @@ The only network request the app makes is an anonymous download of the latest US
 
 ## Code signing policy
 
-Release v2.0.0 is **not** code-signed. For later releases the project is applying to the [SignPath Foundation](https://signpath.org/) for free code signing of open-source software. **The application is pending.** Once it is approved, this section will be updated to say that the Windows executable is signed through SignPath.io with a certificate from the SignPath Foundation.
+Release v2.0.0 is **not** code-signed, so Windows may warn about it (see [Download](#download)). Code signing is planned for a later release; this section will be updated when it is in place.
 
-- **How releases are built:** a GitHub Actions workflow (`.github/workflows/build.yml`) builds the executable from the public source code in this repository and runs the unit tests. Only executables built this way will be submitted for signing, and only from this project's own source code.
-- **Team roles:** this is a one-person project. [Nipunchugh10](https://github.com/Nipunchugh10) is the author, reviewer and approver of every release. Two-factor authentication is enabled on the GitHub account, and will be enabled on the signing account.
+- **How releases are built:** a GitHub Actions workflow (`.github/workflows/build.yml`) builds the executable from the public source code in this repository and runs the unit tests. Releases are built only from this project's own source code.
+- **Team roles:** this is a one-person project. [Nipunchugh10](https://github.com/Nipunchugh10) is the author, reviewer and approver of every release. Two-factor authentication is enabled on the GitHub account.
 - **Privacy:** see [Privacy](#privacy). The app sends no personal data. Its only network request is the anonymous exchange-rate download at launch, which you can turn off with **Tools > Sync Rates on Launch**.
 
 ## Data safety
