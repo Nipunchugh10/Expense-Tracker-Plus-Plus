@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.2 (in preparation)
+## 2.0.2 (2026-10-06)
 
 ### Added
 - **Subscriptions found in past payments.** After a CSV import (and any time from **Tools > Find Subscriptions in Past Payments...**), payments of type Subscription that repeat on a regular schedule are recognised: weekly, monthly (including bills on the 31st), yearly, or every N days (such as 28-day mobile plans). A dialog lists them with amount, cycle, number of payments and next renewal. The ones you choose become subscriptions, linked to their past payments, so nothing is recorded twice. Payments that stopped are added paused. Names with a single payment or irregular dates are listed instead of guessed.
