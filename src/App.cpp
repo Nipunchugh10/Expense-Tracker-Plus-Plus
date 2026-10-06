@@ -401,8 +401,9 @@ void App::StartImport() {
         CsvIO::ParseResult parsed;
     };
     const int year = Date::Today().year;
+    AutoCategorizer rules = categorizer;   // a copy: the worker must not touch the UI thread's object
     RunJob<CsvLoad>("Reading " + importFileName + "...",
-        [file, year]() {
+        [file, year, rules]() {
             CsvLoad out;
             std::string raw;
             out.io = ReadWholeFile(file, raw);
@@ -411,7 +412,7 @@ void App::StartImport() {
             raw.clear();
             out.legacy = CsvIO::IsLegacyFormat(out.content);
             if (!out.legacy) {
-                out.parsed = CsvIO::Parse(out.content, year);
+                out.parsed = CsvIO::Parse(out.content, year, &rules);
                 out.content.clear();
             }
             return out;
@@ -434,7 +435,7 @@ void App::StartImport() {
 }
 
 void App::ContinueImport(int legacyYear) {
-    ApplyParsedImport(CsvIO::Parse(importContent, legacyYear));
+    ApplyParsedImport(CsvIO::Parse(importContent, legacyYear, &categorizer));
     importContent.clear();
 }
 
@@ -442,6 +443,7 @@ void App::ApplyParsedImport(CsvIO::ParseResult&& p) {
     importDrafts = std::move(p.drafts);
     importReasons = std::move(p.reasons);
     importSkipped = p.skipped;
+    importAutoCategorized = p.autoCategorized;
     if (importCp1252) importReasons.insert(importReasons.begin(), "The file was not UTF-8; it was read as Windows-1252.");
 
     if (importDrafts.empty()) {
@@ -470,10 +472,30 @@ void App::CommitImport(bool skipDuplicates) {
         int skipped = importSkipped + res.invalid;
         if (skipped > 0) msg += " " + std::to_string(skipped) + " invalid row(s) skipped.";
         if (res.duplicatesSkipped > 0) msg += " " + std::to_string(res.duplicatesSkipped) + " duplicate(s) skipped.";
+        if (importAutoCategorized > 0)
+            msg += " " + std::to_string(importAutoCategorized) + " uncategorized row(s) were categorized from your category rules.";
         SetStatus(skipped > 0 ? StatusLevel::Warning : StatusLevel::Success, msg, importReasons);
         importDrafts.clear();
         importContent.clear();
+        if (res.imported > 0) OfferSubscriptionDetection(false);
     });
+}
+
+void App::OfferSubscriptionDetection(bool userInitiated) {
+    if (!MutationsAllowed()) return;
+    SubscriptionScan scan = DetectSubscriptions(tracker.GetExpenses(), tracker.GetRecurringRules(), Date::Today());
+    if (scan.found.empty()) {
+        if (userInitiated) {
+            SetStatus(StatusLevel::Info,
+                      "No new subscriptions found. Payments need the type Subscription and must repeat at least twice on a regular schedule.",
+                      scan.unresolved);
+        }
+        return;
+    }
+    detectedSubs = std::move(scan.found);
+    detectedSelected.assign(detectedSubs.size(), 1);
+    detectedUnresolved = std::move(scan.unresolved);
+    openDetectedPopup = true;
 }
 
 void App::ExportCsv() {
@@ -659,6 +681,9 @@ void App::RenderMenuBar() {
         }
         ImGui::Separator();
         if (ImGui::MenuItem("Category Rules...")) openRules = true;
+        if (ImGui::MenuItem("Find Subscriptions in Past Payments...", nullptr, false, !locked)) {
+            Queue([this]() { OfferSubscriptionDetection(true); });
+        }
         if (ImGui::MenuItem("Generate Pending Bills Now", nullptr, false, !locked)) {
             Queue([this]() { RequestRecurringGeneration(true); });
         }
@@ -728,6 +753,7 @@ void App::RenderStatusBar() {
 void App::RenderModals() {
     RenderLoadFailedModal();
     RenderImportModals();
+    RenderDetectedSubscriptionsModal();
     RenderBackfillModal();
     RenderRatesModal();
     RenderRulesModal();
@@ -833,6 +859,94 @@ void App::RenderImportModals() {
         }
         ImGui::EndPopup();
     }
+}
+
+void App::RenderDetectedSubscriptionsModal() {
+    const char* id = "Subscriptions found";
+    if (openDetectedPopup) {
+        ImGui::OpenPopup(id);
+        openDetectedPopup = false;
+    }
+    const float u = ImGui::GetFontSize();
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(u * 52, u * 30), ImGuiCond_Appearing);
+    if (!ImGui::BeginPopupModal(id, nullptr)) return;
+
+    ImGui::TextWrapped("These payments repeat on a regular schedule. Create them as subscriptions so the Subscriptions "
+                       "tab shows them, with renewal reminders and your monthly burn rate.");
+    Ui::MutedText("Past payments are linked to the new subscriptions and are never recorded twice.");
+    ImGui::Spacing();
+
+    int selected = 0;
+    for (char c : detectedSelected) selected += c ? 1 : 0;
+    const float listH = detectedUnresolved.empty() ? -ImGui::GetFrameHeightWithSpacing() * 1.5f : -u * 8.0f;
+    if (ImGui::BeginTable("##detected", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY,
+                          ImVec2(0, listH))) {
+        ImGui::TableSetupScrollFreeze(0, 1);
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, u * 1.6f);
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Amount", ImGuiTableColumnFlags_WidthFixed, u * 7);
+        ImGui::TableSetupColumn("Renews", ImGuiTableColumnFlags_WidthFixed, u * 7);
+        ImGui::TableSetupColumn("Payments", ImGuiTableColumnFlags_WidthFixed, u * 4.5f);
+        ImGui::TableSetupColumn("Next renewal", ImGuiTableColumnFlags_WidthFixed, u * 10);
+        ImGui::TableHeadersRow();
+        for (size_t i = 0; i < detectedSubs.size(); i++) {
+            const DetectedSubscription& d = detectedSubs[i];
+            ImGui::PushID(static_cast<int>(i));
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            bool on = detectedSelected[i] != 0;
+            if (ImGui::Checkbox("##on", &on)) detectedSelected[i] = on ? 1 : 0;
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(d.description.c_str());
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(MoneyUtil::Format(d.amount, d.currency).c_str());
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(d.ToRule().CycleLabel().c_str());
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", static_cast<int>(d.expenseIds.size()));
+            ImGui::TableNextColumn();
+            if (d.looksStopped) Ui::MutedText("stopped? (paused)");
+            else ImGui::TextUnformatted(d.nextRenewal.ToString().c_str());
+            ImGui::PopID();
+        }
+        ImGui::EndTable();
+    }
+    if (!detectedUnresolved.empty()) {
+        ImGui::Text("Not created automatically (%d):", static_cast<int>(detectedUnresolved.size()));
+        ImGui::BeginChild("##unresolved", ImVec2(0, -ImGui::GetFrameHeightWithSpacing() * 2.2f), ImGuiChildFlags_Borders);
+        for (auto& line : detectedUnresolved) Ui::MutedText("%s", line.c_str());
+        ImGui::EndChild();
+        Ui::MutedText("If those renew, add them yourself with + Add Subscription.");
+    }
+
+    ImGui::BeginDisabled(selected == 0);
+    std::string createLabel = "Create " + std::to_string(selected) + " subscription(s)";
+    if (ImGui::Button(createLabel.c_str())) {
+        std::vector<DetectedSubscription> chosen;
+        for (size_t i = 0; i < detectedSubs.size(); i++) {
+            if (detectedSelected[i]) chosen.push_back(detectedSubs[i]);
+        }
+        ImGui::CloseCurrentPopup();
+        Queue([this, chosen]() {
+            if (!MutationsAllowed()) return;
+            int n = tracker.AddDetectedSubscriptions(chosen);
+            commands.Clear();   // linking edits transactions; older undo steps would no longer match
+            if (n > 0) {
+                SetStatus(StatusLevel::Success,
+                          "Created " + std::to_string(n) + " subscription(s) from past payments. See the Subscriptions tab.");
+            } else {
+                SetStatus(StatusLevel::Error, "Could not create the subscriptions: " + tracker.GetLastError());
+            }
+            RequestRecurringGeneration(false);
+        });
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (ImGui::Button("Select all")) detectedSelected.assign(detectedSubs.size(), 1);
+    ImGui::SameLine();
+    if (ImGui::Button("Not now", ImVec2(u * 7, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape, false)) ImGui::CloseCurrentPopup();
+    ImGui::EndPopup();
 }
 
 void App::RenderBackfillModal() {

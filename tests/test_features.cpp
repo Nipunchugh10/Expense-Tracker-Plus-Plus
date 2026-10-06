@@ -734,3 +734,126 @@ TEST_CASE("Old generated bills load as subscriptions; new rule fields round-trip
     CHECK(!back.rules[0].IsAutoRecord());
     CHECK(back.expenses[0].IsSubscription());
 }
+
+// ── Subscriptions found in past payments, auto-categorized import (2.0.2) ──
+
+#include "AutoCategorizer.h"
+#include "CsvIO.h"
+#include "SubscriptionDetector.h"
+
+namespace {
+
+int AddSubPayment(ExpenseTracker& t, const std::string& name, double amount, const Date& d,
+                  const std::string& currency = "INR") {
+    return t.AddExpense(test::MakeExpense(name, amount, d, "Entertainment", currency, TransactionType::Subscription));
+}
+
+const DetectedSubscription* FindDetected(const SubscriptionScan& s, const std::string& name) {
+    for (auto& d : s.found) {
+        if (d.description == name) return &d;
+    }
+    return nullptr;
+}
+
+} // namespace
+
+TEST_CASE("Monthly subscriptions are detected from past payments, linked, and never charged twice") {
+    ExpenseTracker t;
+    for (int m = 1; m <= 9; m++) AddSubPayment(t, "Netflix Premium", 649, {2026, m, 8});
+    t.AddExpense(test::MakeExpense("Netflix Premium", 649, {2026, 3, 9}));   // a normal expense is ignored
+    SubscriptionScan scan = DetectSubscriptions(t.GetExpenses(), t.GetRecurringRules(), {2026, 9, 20});
+    CHECK_EQ(scan.found.size(), size_t(1));
+    const DetectedSubscription* d = FindDetected(scan, "Netflix Premium");
+    CHECK(d != nullptr);
+    if (!d) return;
+    CHECK(d->frequency == Frequency::Monthly);
+    CHECK_EQ(d->amount, MoneyUtil::FromMajor(649));
+    CHECK_EQ(d->expenseIds.size(), size_t(9));
+    CHECK(d->nextRenewal == (Date{2026, 10, 8}));
+    CHECK(!d->looksStopped);
+
+    CHECK_EQ(t.AddDetectedSubscriptions(scan.found), 1);
+    CHECK_EQ(t.GetRecurringRules().size(), size_t(1));
+    int linked = 0;
+    for (auto& e : t.GetExpenses()) linked += e.GetRecurringRuleId() != 0 ? 1 : 0;
+    CHECK_EQ(linked, 9);
+    CHECK_EQ(t.CountPendingOccurrences({2026, 9, 20}).total, 0);   // the 9 past payments are not generated again
+    CHECK_EQ(t.CountPendingOccurrences({2026, 10, 8}).total, 1);   // the next renewal is
+    CHECK(DetectSubscriptions(t.GetExpenses(), t.GetRecurringRules(), {2026, 9, 20}).found.empty());   // idempotent
+}
+
+TEST_CASE("Yearly, every-28-days and month-end schedules are recognised") {
+    ExpenseTracker t;
+    AddSubPayment(t, "Health insurance", 18000, {2025, 3, 20});
+    AddSubPayment(t, "Health insurance", 18500, {2026, 3, 22});
+    for (int i = 0; i < 6; i++) AddSubPayment(t, "Jio 28-day plan", 349, Utils::AddDays({2026, 1, 3}, i * 28));
+    AddSubPayment(t, "Gym", 1999, {2026, 1, 31});
+    AddSubPayment(t, "Gym", 1999, {2026, 2, 28});
+    AddSubPayment(t, "Gym", 1999, {2026, 3, 31});
+    AddSubPayment(t, "Gym", 1999, {2026, 4, 30});
+    SubscriptionScan scan = DetectSubscriptions(t.GetExpenses(), t.GetRecurringRules(), {2026, 5, 10});
+    CHECK_EQ(scan.found.size(), size_t(3));
+
+    const DetectedSubscription* ins = FindDetected(scan, "Health insurance");
+    CHECK(ins && ins->frequency == Frequency::Yearly);
+    if (ins) CHECK_EQ(ins->amount, MoneyUtil::FromMajor(18500));   // latest amount wins
+
+    const DetectedSubscription* jio = FindDetected(scan, "Jio 28-day plan");
+    CHECK(jio && jio->frequency == Frequency::EveryNDays);
+    if (jio) {
+        CHECK_EQ(jio->intervalDays, 28);
+        CHECK(jio->nextRenewal == Utils::AddDays({2026, 1, 3}, 6 * 28));
+    }
+
+    const DetectedSubscription* gym = FindDetected(scan, "Gym");
+    CHECK(gym && gym->frequency == Frequency::Monthly);
+    if (gym) {
+        CHECK_EQ(gym->startDate.day, 31);                  // anchored on the 31st, never drifts to the 28th
+        CHECK(gym->nextRenewal == (Date{2026, 5, 31}));
+    }
+}
+
+TEST_CASE("Single, irregular and stopped payment histories are handled honestly") {
+    ExpenseTracker t;
+    AddSubPayment(t, "Amazon Prime annual", 1499, {2026, 6, 11});            // one payment: unknown cycle
+    AddSubPayment(t, "Random", 100, {2026, 1, 1});
+    AddSubPayment(t, "Random", 100, {2026, 1, 9});
+    AddSubPayment(t, "Random", 100, {2026, 2, 27});
+    AddSubPayment(t, "Random", 100, {2026, 3, 2});                            // irregular
+    for (int m = 1; m <= 4; m++) AddSubPayment(t, "Old magazine", 199, {2026, m, 5});   // stopped in April
+    SubscriptionScan scan = DetectSubscriptions(t.GetExpenses(), t.GetRecurringRules(), {2026, 9, 1});
+    CHECK_EQ(scan.found.size(), size_t(1));
+    const DetectedSubscription* old = FindDetected(scan, "Old magazine");
+    CHECK(old && old->looksStopped);
+    CHECK_EQ(scan.unresolved.size(), size_t(2));
+    if (old) {
+        CHECK(!old->ToRule().IsActive());   // created paused, so nothing is backfilled
+        CHECK_EQ(t.AddDetectedSubscriptions(scan.found), 1);
+        CHECK_EQ(t.CountPendingOccurrences({2026, 9, 1}).total, 0);
+    }
+}
+
+TEST_CASE("CSV import fills empty categories from the category rules") {
+    AutoCategorizer rules;
+    const std::string csv =
+        "Date,Type,Description,Category,Amount\n"
+        "2026-01-02,expense,Uber ride,,250\n"
+        "2026-01-03,expense,Apollo Pharmacy medicines,,845\n"
+        "2026-01-04,expense,Uber ride,Travel,300\n"
+        "2026-01-05,expense,Mystery shop,,99\n"
+        "2026-01-06,refund,Unknown type,,10\n";
+    CsvIO::ParseResult with = CsvIO::Parse(csv, 2026, &rules);
+    CHECK_EQ(with.drafts.size(), size_t(4));
+    CHECK_EQ(with.autoCategorized, 2);
+    if (with.drafts.size() == 4) {
+        CHECK_EQ(with.drafts[0].GetCategory(), std::string("Transportation"));
+        CHECK_EQ(with.drafts[1].GetCategory(), std::string("Health"));
+        CHECK_EQ(with.drafts[2].GetCategory(), std::string("Travel"));    // a category in the file is kept
+        CHECK_EQ(with.drafts[3].GetCategory(), std::string("General"));   // no rule matches
+    }
+    CHECK(!with.reasons.empty() && with.reasons[0].find("subscription") != std::string::npos);
+
+    CsvIO::ParseResult without = CsvIO::Parse(csv, 2026);
+    CHECK_EQ(without.autoCategorized, 0);
+    if (!without.drafts.empty()) CHECK_EQ(without.drafts[0].GetCategory(), std::string("General"));
+}

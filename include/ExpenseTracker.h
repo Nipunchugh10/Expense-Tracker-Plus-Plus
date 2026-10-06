@@ -23,6 +23,8 @@ struct LedgerData {
     int nextGoalID    = 1;
 };
 
+struct DetectedSubscription;   // SubscriptionDetector.h
+
 struct ImportResult {
     int imported = 0;
     int invalid = 0;
@@ -124,6 +126,9 @@ public:
     bool UpdateRecurringRule(const RecurringRule& rule);
     bool DeleteRecurringRule(int id);                   // generated expenses are kept and unlinked
     bool SetRuleActive(int id, bool active);
+    // Creates subscriptions found in payment history (SubscriptionDetector) and links their past
+    // payments to them. Returns how many were created.
+    int  AddDetectedSubscriptions(const std::vector<DetectedSubscription>& detected);
     const RecurringRule* FindRule(int id) const;
     const std::vector<RecurringRule>& GetRecurringRules() const { return recurringRules; }
 

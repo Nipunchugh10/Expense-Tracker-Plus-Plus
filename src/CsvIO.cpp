@@ -1,4 +1,5 @@
 #include "CsvIO.h"
+#include "AutoCategorizer.h"
 #include "ExpenseTracker.h"
 #include "Utils.h"
 #include "Validation.h"
@@ -75,7 +76,7 @@ bool IsLegacyFormat(const std::string& content) {
     return DetectHeader(rows[0], cols) && cols.month >= 0 && cols.date < 0;
 }
 
-ParseResult Parse(const std::string& content, int legacyYear) {
+ParseResult Parse(const std::string& content, int legacyYear, const AutoCategorizer* categorizer) {
     ParseResult result;
     auto rows = Utils::ParseCSV(content);
     if (rows.empty()) return result;
@@ -121,16 +122,24 @@ ParseResult Parse(const std::string& content, int legacyYear) {
         TransactionType type = TransactionType::Expense;
         std::string typeText = Field(row, cols.type);
         if (!typeText.empty() && !TransactionTypeFromString(typeText, type)) {
-            skip("unknown type '" + typeText + "' (use expense, income or transfer)");
+            skip("unknown type '" + typeText + "' (use expense, income, transfer or subscription)");
             continue;
         }
 
         std::string currency = Field(row, cols.currency);
         if (currency.empty()) currency = kDefaultCurrency;
 
-        Expense e(0, Field(row, cols.description), amount, date, Field(row, cols.category), currency, 0, type);
+        std::string category = Field(row, cols.category);
+        bool suggested = false;
+        if (category.empty() && categorizer) {
+            category = categorizer->SuggestCategory(Field(row, cols.description));
+            suggested = !category.empty();
+        }
+
+        Expense e(0, Field(row, cols.description), amount, date, category, currency, 0, type);
         std::string why;
         if (!Validation::NormalizeExpense(e, why)) { skip(why); continue; }
+        if (suggested) result.autoCategorized++;
         result.drafts.push_back(e);
     }
     return result;

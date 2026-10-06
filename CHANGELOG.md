@@ -1,6 +1,16 @@
 # Changelog
 
-## 2.0.1 (in preparation)
+## 2.0.2 (in preparation)
+
+### Added
+- **Subscriptions found in past payments.** After a CSV import (and any time from **Tools > Find Subscriptions in Past Payments...**), payments of type Subscription that repeat on a regular schedule are recognised: weekly, monthly (including bills on the 31st), yearly, or every N days (such as 28-day mobile plans). A dialog lists them with amount, cycle, number of payments and next renewal. The ones you choose become subscriptions, linked to their past payments, so nothing is recorded twice. Payments that stopped are added paused. Names with a single payment or irregular dates are listed instead of guessed.
+- **Auto-categorized CSV import.** Rows with an empty Category get one from your category rules, instead of "General". A category written in the file is always kept.
+- Default category rules for **Shopping** (Amazon, Flipkart, Myntra, IKEA, ...) and **Health** (pharmacy, Apollo, hospital, doctor, ...), plus "amazon prime" for Entertainment. These are the defaults for new users and **Reset to defaults**; saved rules are not changed.
+
+### Fixed
+- The CSV import message for an unknown Type now lists `subscription` as an accepted value.
+
+## 2.0.1 (submitted to the Microsoft Store)
 
 ### Added
 - `PRIVACY.md`: the full privacy policy.

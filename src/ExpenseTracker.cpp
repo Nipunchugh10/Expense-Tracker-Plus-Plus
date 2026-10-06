@@ -1,4 +1,5 @@
 #include "ExpenseTracker.h"
+#include "SubscriptionDetector.h"
 #include "Utils.h"
 #include "Validation.h"
 #include <algorithm>
@@ -295,6 +296,21 @@ bool ExpenseTracker::SetRuleActive(int id, bool active) {
     rule->SetActive(active);
     Touch();
     return true;
+}
+
+int ExpenseTracker::AddDetectedSubscriptions(const std::vector<DetectedSubscription>& detected) {
+    int created = 0;
+    for (auto& d : detected) {
+        int id = AddRecurringRule(d.ToRule());
+        if (id == 0) continue;
+        std::unordered_set<int> ids(d.expenseIds.begin(), d.expenseIds.end());
+        for (auto& e : expenses) {
+            if (e.GetRecurringRuleId() == 0 && ids.count(e.GetID())) e.SetRecurringRuleId(id);
+        }
+        created++;
+    }
+    if (created > 0) Touch();
+    return created;
 }
 
 PendingOccurrences ExpenseTracker::CountPendingOccurrences(const Date& upTo, int nowMinutes) const {

@@ -51,7 +51,11 @@ void AutoCategorizer::ResetToDefaults() {
                             "ola", "rapido", "irctc", "indian oil", "bharat petroleum", "hpcl", "bpcl",
                             "parking", "toll"}},
         {"Entertainment", {"netflix", "spotify", "steam", "playstation", "cinema", "amc", "hulu",
-                           "prime video", "hotstar", "bookmyshow", "pvr"}},
+                           "prime video", "amazon prime", "hotstar", "bookmyshow", "pvr"}},
+        {"Shopping", {"amazon", "flipkart", "myntra", "ajio", "meesho", "ikea", "decathlon", "croma",
+                      "reliance digital", "target", "best buy"}},
+        {"Health", {"pharmacy", "apollo", "medplus", "pharmeasy", "1mg", "hospital", "clinic", "doctor",
+                    "dental", "practo"}},
         {"Utilities", {"electric", "electricity", "water bill", "internet", "at&t", "verizon", "comcast",
                        "airtel", "jio", "broadband", "gas bill"}},
     };

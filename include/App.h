@@ -16,6 +16,7 @@
 #include "RateSync.h"
 #include "ReportGenerator.h"
 #include "Settings.h"
+#include "SubscriptionDetector.h"
 #include "ThemeManager.h"
 #include "Tabs/AnalyticsTab.h"
 #include "Tabs/BudgetTab.h"
@@ -71,6 +72,7 @@ private:
     void DoRestore(bool replace);
     void PollJobs();
     void CommitImport(bool skipDuplicates);
+    void OfferSubscriptionDetection(bool userInitiated);
     void ExportCsv();
     void ExportJson();
     void ExportReport(ReportGenerator::Format format);
@@ -83,6 +85,7 @@ private:
     void RenderModals();
     void RenderLoadFailedModal();
     void RenderImportModals();
+    void RenderDetectedSubscriptionsModal();
     void RenderBackfillModal();
     void RenderRatesModal();
     void RenderRulesModal();
@@ -176,6 +179,13 @@ private:
     std::vector<std::string> importReasons;
     int         importSkipped = 0;
     size_t      importDuplicates = 0;
+    int         importAutoCategorized = 0;
+
+    // Subscriptions found in past payments (after an import, or Tools > Find Subscriptions)
+    bool        openDetectedPopup = false;
+    std::vector<DetectedSubscription> detectedSubs;
+    std::vector<char> detectedSelected;
+    std::vector<std::string> detectedUnresolved;
 
     // Background jobs (see RunJob)
     struct Job {

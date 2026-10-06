@@ -80,6 +80,7 @@ add_library(tracker_core STATIC
     src/ReportGenerator.cpp
     src/Settings.cpp
     src/RateSync.cpp
+    src/SubscriptionDetector.cpp
 )
 target_include_directories(tracker_core PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(tracker_core PUBLIC nlohmann_json shell32 ole32 uuid winhttp)
