@@ -219,7 +219,7 @@ private:
     // from all transactions 60 times a second would stall the UI.
     struct PeriodAggregate {
         // Indexed by TransactionType. The Expense slot holds ALL spending
-        // (expenses + subscriptions); the Subscription slot is the subset.
+        // (expenses + subscriptions + transfers); those two slots are subsets.
         Money total[kTransactionTypeCount] = {};      // base currency
         int   excluded[kTransactionTypeCount] = {};   // rows without an exchange rate
         std::map<std::string, Money> byCategory[kTransactionTypeCount];

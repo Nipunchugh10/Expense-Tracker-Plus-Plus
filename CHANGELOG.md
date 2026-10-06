@@ -8,6 +8,10 @@
 - **Auto-categorized CSV import.** Rows with an empty Category get one from your category rules, instead of "General". A category written in the file is always kept.
 - Default category rules for **Shopping** (Amazon, Flipkart, Myntra, IKEA, ...) and **Health** (pharmacy, Apollo, hospital, doctor, ...), plus "amazon prime" for Entertainment. These are the defaults for new users and **Reset to defaults**; saved rules are not changed.
 
+### Changed
+- **Transfers now count as spending.** Money sent to another account or person (type Transfer) is included in Total Expenses, budgets, the spending pie chart, the monthly charts, Analytics, reports and the Expenses footer, like any other outgoing payment. Record money you receive as Income, and money you set aside as Savings.
+- The Expenses footer always shows **this month's savings**, whatever the filter.
+
 ### Fixed
 - The CSV import message for an unknown Type now lists every accepted value.
 

@@ -196,18 +196,21 @@ TEST_CASE("Category budgets are case-insensitive and zero removes them") {
 
 // ── Cash flow (Step 4, G5/G6) ─────────────────────────────────────
 
-TEST_CASE("Income and transfers never count as spending") {
+TEST_CASE("Income never counts as spending; transfers count as spending") {
     ExpenseTracker t;
     t.AddExpense(test::MakeExpense("Salary", 1000, {2025, 3, 1}, "Salary", "INR", TransactionType::Income));
     t.AddExpense(test::MakeExpense("Rent", 400, {2025, 3, 2}, "Housing"));
-    t.AddExpense(test::MakeExpense("To savings", 300, {2025, 3, 3}, "Savings", "INR", TransactionType::Transfer));
-    CHECK_EQ(t.GetMonthlyTotal(2025, 3), MoneyUtil::FromMajor(400));
+    t.AddExpense(test::MakeExpense("To Mom", 300, {2025, 3, 3}, "Family", "INR", TransactionType::Transfer));
+    t.SetOverallBudget(2025, 3, MoneyUtil::FromMajor(600));
+    CHECK_EQ(t.GetMonthlyTotal(2025, 3), MoneyUtil::FromMajor(700));             // rent + transfer
     CHECK_EQ(t.GetMonthlyIncome(2025, 3), MoneyUtil::FromMajor(1000));
-    CHECK_EQ(t.GetNetSavings(2025, 3), MoneyUtil::FromMajor(600));
-    CHECK(std::fabs(*t.GetSavingsRate(2025, 3) - 60.0) < 1e-9);
+    CHECK_EQ(t.GetNetSavings(2025, 3), MoneyUtil::FromMajor(300));
+    CHECK(std::fabs(*t.GetSavingsRate(2025, 3) - 30.0) < 1e-9);
     CHECK(!t.GetSavingsRate(2025, 4).has_value());
-    CHECK_EQ(t.GetCategoryBreakdown(2025, 3).count("Salary"), size_t(0));
-    CHECK_EQ(t.GetTopExpenses(2025, 10, 3).size(), size_t(1));
+    auto cats = t.GetCategoryBreakdown(2025, 3);                                 // pie chart data
+    CHECK_EQ(cats.count("Salary"), size_t(0));
+    CHECK_EQ(cats["Family"], MoneyUtil::FromMajor(300));
+    CHECK_EQ(t.GetTotal(2025, 3, TransactionType::Transfer).amount, MoneyUtil::FromMajor(300));   // still separable
 }
 
 // ── Goals (Step 5, G7) ────────────────────────────────────────────

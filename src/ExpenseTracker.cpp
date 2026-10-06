@@ -696,13 +696,13 @@ void ExpenseTracker::EnsureCache() const {
         if (ToBase(e, v)) {
             agg.total[t] += v;
             agg.byCategory[t][e.GetCategory()] += v;
-            if (e.IsSubscription()) {
+            if (e.IsSubscription() || e.IsTransfer()) {
                 agg.total[spend] += v;
                 agg.byCategory[spend][e.GetCategory()] += v;
             }
         } else {
             agg.excluded[t]++;
-            if (e.IsSubscription()) agg.excluded[spend]++;
+            if (e.IsSubscription() || e.IsTransfer()) agg.excluded[spend]++;
         }
         if (e.IsSpending()) agg.nativeExpenseByCurrency[e.GetCurrency()] += e.GetAmount();
     }

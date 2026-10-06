@@ -56,7 +56,9 @@ public:
     bool            IsTransfer()         const { return type == TransactionType::Transfer; }
     bool            IsSubscription()     const { return type == TransactionType::Subscription; }
     bool            IsSavings()          const { return type == TransactionType::Savings; }
-    bool            IsSpending()         const { return IsExpense() || IsSubscription(); }
+    // Money going out that counts in expense totals, budgets and charts. Transfers count too
+    // (they are outgoing payments to another account or person); savings do not.
+    bool            IsSpending()         const { return IsExpense() || IsSubscription() || IsTransfer(); }
 
     void SetID(int v)                           { id = v; }
     void SetDescription(const std::string& d)   { description = d; }
