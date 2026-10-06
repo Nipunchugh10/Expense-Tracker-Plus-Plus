@@ -12,7 +12,10 @@ struct Settings;
 struct Date;
 
 namespace JsonIO {
-    constexpr int kSchemaVersion = 2;
+    // 3 = adds the "savings" transaction type. Files are written as version 2 unless they contain
+    // savings, so older app versions keep full access to ledgers without savings, and open ledgers
+    // with savings read-only instead of dropping those rows.
+    constexpr int kSchemaVersion = 3;
 
     struct LoadReport {
         int fileVersion = 1;

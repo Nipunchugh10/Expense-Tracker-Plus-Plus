@@ -857,3 +857,48 @@ TEST_CASE("CSV import fills empty categories from the category rules") {
     CHECK_EQ(without.autoCategorized, 0);
     if (!without.drafts.empty()) CHECK_EQ(without.drafts[0].GetCategory(), std::string("General"));
 }
+
+// ── Savings transactions (2.0.2) ─────────────────────────────────────
+
+TEST_CASE("Savings are counted as saved money, not as spending or budget use") {
+    ExpenseTracker t;
+    t.AddExpense(test::MakeExpense("Salary", 100000, {2026, 10, 1}, "Salary", "INR", TransactionType::Income));
+    t.AddExpense(test::MakeExpense("Groceries", 8000, {2026, 10, 3}, "Groceries"));
+    t.AddExpense(test::MakeExpense("Emergency fund", 25000, {2026, 10, 2}, "Savings", "INR", TransactionType::Savings));
+    t.SetOverallBudget(2026, 10, MoneyUtil::FromMajor(10000));
+
+    CHECK_EQ(t.GetTotal(2026, 10, TransactionType::Savings).amount, MoneyUtil::FromMajor(25000));
+    CHECK_EQ(t.GetMonthlyTotal(2026, 10), MoneyUtil::FromMajor(8000));            // spending excludes savings
+    CHECK_EQ(t.GetMonthlyIncome(2026, 10), MoneyUtil::FromMajor(100000));
+    auto expenseCats = t.GetCategoryBreakdown(2026, 10, TransactionType::Expense);
+    CHECK(expenseCats.find("Savings") == expenseCats.end());
+    CHECK(t.FindExpense(3) && t.FindExpense(3)->IsSavings() && !t.FindExpense(3)->IsSpending());
+
+    TransactionType parsed;
+    CHECK(TransactionTypeFromString("Savings", parsed) && parsed == TransactionType::Savings);
+    CHECK_EQ(std::string(TransactionTypeToString(TransactionType::Savings)), std::string("savings"));
+}
+
+TEST_CASE("Ledgers are written as schema 2 unless they contain savings") {
+    ExpenseTracker plain;
+    plain.AddExpense(test::MakeExpense("Coffee", 120, {2026, 10, 1}));
+    CHECK(JsonIO::Serialize(plain).find("\"version\": 2") != std::string::npos);
+
+    ExpenseTracker withSavings;
+    withSavings.AddExpense(test::MakeExpense("RD deposit", 5000, {2026, 10, 1}, "Savings", "INR", TransactionType::Savings));
+    std::string text = JsonIO::Serialize(withSavings);
+    CHECK(text.find("\"version\": 3") != std::string::npos);
+    CHECK(text.find("\"savings\"") != std::string::npos);
+
+    LedgerData back;
+    JsonIO::LoadReport rep;
+    std::string err;
+    CHECK(JsonIO::Deserialize(text, back, rep, err));
+    CHECK(!rep.newerVersion);
+    CHECK_EQ(back.expenses.size(), size_t(1));
+    if (!back.expenses.empty()) CHECK(back.expenses[0].IsSavings());
+
+    CsvIO::ParseResult csv = CsvIO::Parse("Date,Type,Description,Amount\n2026-10-05,savings,SIP top-up,2000\n", 2026);
+    CHECK_EQ(csv.drafts.size(), size_t(1));
+    if (!csv.drafts.empty()) CHECK(csv.drafts[0].IsSavings());
+}

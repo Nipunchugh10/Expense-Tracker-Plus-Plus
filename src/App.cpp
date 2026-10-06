@@ -245,7 +245,7 @@ bool App::SaveLedger(bool quiet) {
     std::error_code ec;
 
     // One-time copy of an older-schema file before it is upgraded (P0-A11).
-    if (loadedVersion > 0 && loadedVersion < JsonIO::kSchemaVersion && !versionBackupDone) {
+    if (loadedVersion > 0 && loadedVersion < 2 && !versionBackupDone) {   // v2 and v3 need no conversion
         if (fs::exists(path, ec)) {
             fs::path versioned = path.parent_path() / ("expenses.v" + std::to_string(loadedVersion) + ".bak.json");
             if (!fs::exists(versioned, ec)) {
@@ -1388,8 +1388,9 @@ void App::RenderRestoreModal() {
     Ui::MutedText("%s", Paths::ToUtf8(r.file.parent_path()).c_str());
     ImGui::Separator();
 
-    int total = s.expenses + s.incomes + s.transfers;
-    ImGui::Text("%d transaction(s): %d expense(s), %d income, %d transfer(s)", total, s.expenses, s.incomes, s.transfers);
+    int total = s.expenses + s.incomes + s.transfers + s.savings;
+    ImGui::Text("%d transaction(s): %d expense(s), %d income, %d transfer(s), %d savings", total, s.expenses, s.incomes,
+                s.transfers, s.savings);
     if (s.hasDates) ImGui::Text("Dates: %s to %s", s.firstDate.ToString().c_str(), s.lastDate.ToString().c_str());
     ImGui::Text("%d subscription(s), %d goal(s), budgets for %d month(s)", s.rules, s.goals, s.budgetMonths);
     ImGui::Text("Base currency: %s   File format: version %d", s.baseCurrency.c_str(), r.report.fileVersion);

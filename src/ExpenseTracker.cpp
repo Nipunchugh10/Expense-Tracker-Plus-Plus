@@ -868,6 +868,7 @@ LedgerSummary SummarizeLedger(const LedgerData& data) {
     for (auto& e : data.expenses) {
         if (e.IsIncome()) s.incomes++;
         else if (e.IsTransfer()) s.transfers++;
+        else if (e.IsSavings()) s.savings++;
         else s.expenses++;
         if (!s.hasDates || e.GetDate() < s.firstDate) s.firstDate = e.GetDate();
         if (!s.hasDates || e.GetDate() > s.lastDate) s.lastDate = e.GetDate();

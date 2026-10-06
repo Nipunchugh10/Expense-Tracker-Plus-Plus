@@ -72,5 +72,6 @@ private:
     bool  sortedAsc = false;
     Money footerSpent = 0;
     Money footerEarned = 0;
+    Money footerSaved = 0;
     int   footerExcluded = 0;
 };

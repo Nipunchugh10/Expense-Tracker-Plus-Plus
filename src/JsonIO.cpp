@@ -244,7 +244,9 @@ int FixIds(std::vector<T>& items, long long fileNext, GetId getId, SetId setId, 
 
 static json BuildLedgerJson(const ExpenseTracker& t) {
     json j;
-    j["version"] = kSchemaVersion;
+    bool hasSavings = false;
+    for (auto& e : t.GetExpenses()) hasSavings = hasSavings || e.IsSavings();
+    j["version"] = hasSavings ? kSchemaVersion : 2;
     j["baseCurrency"] = t.GetBaseCurrency();
 
     json rates = json::object();

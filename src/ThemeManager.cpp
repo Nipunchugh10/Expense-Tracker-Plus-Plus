@@ -169,6 +169,7 @@ void ThemeManager::ApplyTheme(AppTheme theme) {
     g_tokens.income            = p.success;
     g_tokens.expense           = p.danger;
     g_tokens.transfer          = p.transfer;
+    g_tokens.savings           = p.light ? Hex(0x0F766E) : Hex(0x2DD4BF);   // teal: distinct from income green
     g_tokens.cardBg            = p.surface;
     g_tokens.dangerButton      = WithAlpha(p.danger, p.light ? 0.85f : 0.70f);
     g_tokens.dangerButtonHover = p.danger;

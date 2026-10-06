@@ -81,6 +81,7 @@ const char* TransactionTypeToString(TransactionType t) {
         case TransactionType::Income:   return "income";
         case TransactionType::Transfer: return "transfer";
         case TransactionType::Subscription: return "subscription";
+        case TransactionType::Savings:  return "savings";
     }
     return "expense";
 }
@@ -91,6 +92,7 @@ const char* TransactionTypeLabel(TransactionType t) {
         case TransactionType::Income:   return "Income";
         case TransactionType::Transfer: return "Transfer";
         case TransactionType::Subscription: return "Subscription";
+        case TransactionType::Savings:  return "Savings";
     }
     return "Expense";
 }
@@ -101,6 +103,7 @@ bool TransactionTypeFromString(const std::string& s, TransactionType& out) {
     if (v == "income")   { out = TransactionType::Income;   return true; }
     if (v == "transfer") { out = TransactionType::Transfer; return true; }
     if (v == "subscription") { out = TransactionType::Subscription; return true; }
+    if (v == "savings")  { out = TransactionType::Savings;  return true; }
     return false;
 }
 

@@ -25,10 +25,11 @@ struct Date {
 
 // Subscription = a payment for a recurring bill. It is spending: every
 // "expense" total (budgets, cash flow, forecast, reports) includes it.
-enum class TransactionType { Expense = 0, Income = 1, Transfer = 2, Subscription = 3 };
-constexpr int kTransactionTypeCount = 4;
+// Savings: money set aside (shown as an outflow, but not spending, so it never touches budgets).
+enum class TransactionType { Expense = 0, Income = 1, Transfer = 2, Subscription = 3, Savings = 4 };
+constexpr int kTransactionTypeCount = 5;
 
-const char* TransactionTypeToString(TransactionType t);   // "expense" | "income" | "transfer" | "subscription"
+const char* TransactionTypeToString(TransactionType t);   // "expense" | "income" | "transfer" | "subscription" | "savings"
 const char* TransactionTypeLabel(TransactionType t);      // "Expense" | "Income" | "Transfer" | "Subscription"
 bool TransactionTypeFromString(const std::string& s, TransactionType& out);
 
@@ -54,6 +55,7 @@ public:
     bool            IsExpense()          const { return type == TransactionType::Expense; }
     bool            IsTransfer()         const { return type == TransactionType::Transfer; }
     bool            IsSubscription()     const { return type == TransactionType::Subscription; }
+    bool            IsSavings()          const { return type == TransactionType::Savings; }
     bool            IsSpending()         const { return IsExpense() || IsSubscription(); }
 
     void SetID(int v)                           { id = v; }

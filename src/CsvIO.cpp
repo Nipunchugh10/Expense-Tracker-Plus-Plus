@@ -122,7 +122,7 @@ ParseResult Parse(const std::string& content, int legacyYear, const AutoCategori
         TransactionType type = TransactionType::Expense;
         std::string typeText = Field(row, cols.type);
         if (!typeText.empty() && !TransactionTypeFromString(typeText, type)) {
-            skip("unknown type '" + typeText + "' (use expense, income, transfer or subscription)");
+            skip("unknown type '" + typeText + "' (use expense, income, transfer, subscription or savings)");
             continue;
         }
 

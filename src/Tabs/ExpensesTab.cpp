@@ -85,10 +85,10 @@ void ExpensesTab::RenderFilterBar(AppContext& ctx) {
     ImGui::InputTextWithHint("##Search", "Search description or category", &filter.searchText);
 
     ImGui::SameLine();
-    const char* typeNames[] = {"All types", "Expenses", "Income", "Transfers", "Subscriptions"};
+    const char* typeNames[] = {"All types", "Expenses", "Income", "Transfers", "Subscriptions", "Savings"};
     int typeIdx = filter.type + 1;
     ImGui::SetNextItemWidth(u * 8);
-    if (ImGui::Combo("##Type", &typeIdx, typeNames, 5)) filter.type = typeIdx - 1;
+    if (ImGui::Combo("##Type", &typeIdx, typeNames, IM_ARRAYSIZE(typeNames))) filter.type = typeIdx - 1;
 
     ImGui::SameLine();
     ImGui::SetNextItemWidth(u * 10);
@@ -156,13 +156,14 @@ void ExpensesTab::RenderTable(AppContext& ctx) {
         cachedRevision = tracker.GetRevision();
         cachedFilter = f;
         resort = true;
-        footerSpent = footerEarned = 0;
+        footerSpent = footerEarned = footerSaved = 0;
         footerExcluded = 0;
         for (auto* e : rows) {
             Money v;
             if (!tracker.ToBase(*e, v)) { if (!e->IsTransfer()) footerExcluded++; continue; }
             if (e->IsSpending()) footerSpent += v;
             else if (e->IsIncome()) footerEarned += v;
+            else if (e->IsSavings()) footerSaved += v;
         }
     }
 
@@ -211,10 +212,11 @@ void ExpensesTab::RenderTable(AppContext& ctx) {
                 ImGui::TextUnformatted(e->GetDate().ToString().c_str());
                 ImGui::TableSetColumnIndex(2);
                 const ImVec4& typeColor = e->IsIncome() ? tk.income : e->IsTransfer() ? tk.transfer
-                                        : e->IsSubscription() ? tk.accent : tk.muted;
+                                        : e->IsSubscription() ? tk.accent : e->IsSavings() ? tk.savings : tk.muted;
                 if (e->IsIncome()) Ui::Badge("INCOME", typeColor);
                 else if (e->IsTransfer()) Ui::Badge("TRANSFER", typeColor);
                 else if (e->IsSubscription()) Ui::Badge("SUBSCRIPTION", typeColor);
+                else if (e->IsSavings()) Ui::Badge("SAVINGS", typeColor);
                 else ImGui::TextColored(typeColor, "Expense");
                 ImGui::TableSetColumnIndex(3);
                 ImGui::TextUnformatted(e->GetDescription().c_str());
@@ -225,7 +227,7 @@ void ExpensesTab::RenderTable(AppContext& ctx) {
                 ImGui::TableSetColumnIndex(4);
                 std::string amount = MoneyUtil::Format(e->GetAmount(), e->GetCurrency());
                 if (e->IsIncome()) ImGui::TextColored(tk.income, "+%s", amount.c_str());
-                else if (e->IsSpending()) ImGui::TextColored(tk.expense, "-%s", amount.c_str());
+                else if (e->IsSpending() || e->IsSavings()) ImGui::TextColored(tk.expense, "-%s", amount.c_str());
                 else ImGui::TextColored(tk.transfer, "%s", amount.c_str());
                 ImGui::TableSetColumnIndex(5);
                 ImGui::TextUnformatted(e->GetCurrency().c_str());
@@ -260,6 +262,10 @@ void ExpensesTab::RenderTable(AppContext& ctx) {
     ImGui::TextColored(tk.expense, "  Expenses %s", MoneyUtil::Format(spent, base).c_str());
     ImGui::SameLine();
     ImGui::TextColored(tk.income, "  Income %s", MoneyUtil::Format(earned, base).c_str());
+    if (footerSaved > 0) {
+        ImGui::SameLine();
+        ImGui::TextColored(tk.savings, "  Savings %s", MoneyUtil::Format(footerSaved, base).c_str());
+    }
     if (excluded > 0) {
         ImGui::SameLine();
         ImGui::TextColored(tk.warning, "  (%d without an exchange rate not counted)", excluded);
@@ -305,21 +311,26 @@ void ExpensesTab::RenderFormFields(AppContext& ctx, ExpenseForm& form, bool isEd
 
     // Type toggle
     const TransactionType types[] = {TransactionType::Expense, TransactionType::Subscription, TransactionType::Income,
-                                     TransactionType::Transfer};
-    for (int i = 0; i < 4; i++) {
+                                     TransactionType::Transfer, TransactionType::Savings};
+    constexpr int kTypes = static_cast<int>(sizeof(types) / sizeof(types[0]));
+    const float typeW = std::max(u * 5.0f, (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * (kTypes - 1)) / kTypes);
+    for (int i = 0; i < kTypes; i++) {
         if (i) ImGui::SameLine();
         bool selected = form.type == types[i];
         const ImVec4& color = types[i] == TransactionType::Income ? tk.income
                             : types[i] == TransactionType::Transfer ? tk.transfer
-                            : types[i] == TransactionType::Subscription ? tk.accent : tk.expense;
+                            : types[i] == TransactionType::Subscription ? tk.accent
+                            : types[i] == TransactionType::Savings ? tk.savings : tk.expense;
         if (selected) {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(color.x, color.y, color.z, 0.55f));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(color.x, color.y, color.z, 0.70f));
         }
-        if (ImGui::Button(TransactionTypeLabel(types[i]), ImVec2(u * 6.5f, 0))) form.type = types[i];
+        if (ImGui::Button(TransactionTypeLabel(types[i]), ImVec2(typeW, 0))) form.type = types[i];
         if (selected) ImGui::PopStyleColor(2);
     }
     if (form.type == TransactionType::Transfer) Ui::MutedText("Transfers are excluded from income, expenses and budgets.");
+    if (form.type == TransactionType::Savings)
+        Ui::MutedText("Money you set aside. Shown as an outflow and as \"Saved\" on the Dashboard, but not counted as spending or in budgets.");
     if (isEdit && form.recurringRuleId != 0) Ui::MutedText("Generated by a subscription; edits apply to this occurrence only.");
 
     ImGui::SetNextItemWidth(w);

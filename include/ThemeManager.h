@@ -22,6 +22,7 @@ struct ThemeTokens {
     ImVec4 income;
     ImVec4 expense;
     ImVec4 transfer;
+    ImVec4 savings;
     ImVec4 cardBg;
     ImVec4 dangerButton;
     ImVec4 dangerButtonHover;

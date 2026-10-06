@@ -49,6 +49,7 @@ struct LedgerSummary {
     int  expenses = 0;
     int  incomes = 0;
     int  transfers = 0;
+    int  savings = 0;
     int  rules = 0;
     int  goals = 0;
     int  budgetMonths = 0;
@@ -219,8 +220,8 @@ private:
     struct PeriodAggregate {
         // Indexed by TransactionType. The Expense slot holds ALL spending
         // (expenses + subscriptions); the Subscription slot is the subset.
-        Money total[kTransactionTypeCount] = {0, 0, 0, 0};   // base currency
-        int   excluded[kTransactionTypeCount] = {0, 0, 0, 0}; // rows without an exchange rate
+        Money total[kTransactionTypeCount] = {};      // base currency
+        int   excluded[kTransactionTypeCount] = {};   // rows without an exchange rate
         std::map<std::string, Money> byCategory[kTransactionTypeCount];
         std::map<std::string, Money> nativeExpenseByCurrency;
     };

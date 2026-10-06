@@ -3,12 +3,16 @@
 ## 2.0.2 (2026-10-06)
 
 ### Added
+- **Savings transactions.** A fifth type, **Savings**, next to Expense, Subscription, Income and Transfer. Money you set aside shows as an outflow (red) with a teal **SAVINGS** badge, is listed under its own Savings total in the Expenses footer, and the Dashboard shows how much you saved in the selected month and what is left after spending and savings. Savings are not counted as spending, so they never use up a budget. Filter the list by **Savings**, and import `savings` as a Type in CSV files.
 - **Subscriptions found in past payments.** After a CSV import (and any time from **Tools > Find Subscriptions in Past Payments...**), payments of type Subscription that repeat on a regular schedule are recognised: weekly, monthly (including bills on the 31st), yearly, or every N days (such as 28-day mobile plans). A dialog lists them with amount, cycle, number of payments and next renewal. The ones you choose become subscriptions, linked to their past payments, so nothing is recorded twice. Payments that stopped are added paused. Names with a single payment or irregular dates are listed instead of guessed.
 - **Auto-categorized CSV import.** Rows with an empty Category get one from your category rules, instead of "General". A category written in the file is always kept.
 - Default category rules for **Shopping** (Amazon, Flipkart, Myntra, IKEA, ...) and **Health** (pharmacy, Apollo, hospital, doctor, ...), plus "amazon prime" for Entertainment. These are the defaults for new users and **Reset to defaults**; saved rules are not changed.
 
 ### Fixed
-- The CSV import message for an unknown Type now lists `subscription` as an accepted value.
+- The CSV import message for an unknown Type now lists every accepted value.
+
+### Compatibility
+- Data files that contain savings are written as schema version 3. Older app versions (2.0.0, 2.0.1) open such files **read-only** instead of dropping the savings rows. Files without savings stay version 2 and work in every 2.x version.
 
 ## 2.0.1 (submitted to the Microsoft Store)
 

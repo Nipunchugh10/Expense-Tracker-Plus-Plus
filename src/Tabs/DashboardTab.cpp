@@ -111,6 +111,13 @@ void DashboardTab::Render(AppContext& ctx) {
         Ui::KpiCard("##kpiRate", "Savings Rate", "N/A", tk.muted, cardW, cardH, "No income recorded");
     }
 
+    Totals saved = tracker.GetTotal(selectedYear, selectedMonth, TransactionType::Savings);
+    if (saved.amount > 0) {
+        ImGui::TextColored(tk.savings, "Saved %s %s: %s set aside as savings. Left after spending and savings: %s.",
+                           selectedMonth > 0 ? "in" : "during", period.c_str(), MoneyUtil::Format(saved.amount, base).c_str(),
+                           MoneyUtil::Format(net - saved.amount, base).c_str());
+    }
+
     if (selectedMonth > 0 && tracker.GetBudgetManager().HasOverallBudget(selectedYear, selectedMonth)) {
         Money budget = tracker.GetBudgetManager().GetOverallBudget(selectedYear, selectedMonth);
         Money left = budget - expense.amount;
@@ -266,7 +273,7 @@ void DashboardTab::Render(AppContext& ctx) {
             ImGui::TableSetColumnIndex(3);
             std::string amount = MoneyUtil::Format(e->GetAmount(), e->GetCurrency());
             if (e->IsIncome()) ImGui::TextColored(tk.income, "+%s", amount.c_str());
-            else if (e->IsSpending()) ImGui::TextColored(tk.expense, "-%s", amount.c_str());
+            else if (e->IsSpending() || e->IsSavings()) ImGui::TextColored(tk.expense, "-%s", amount.c_str());
             else ImGui::TextColored(tk.transfer, "%s", amount.c_str());
             ImGui::TableSetColumnIndex(4);
             Ui::MutedText("%s", TransactionTypeLabel(e->GetType()));
