@@ -4,8 +4,8 @@
 // Bump ETP_VERSION_STRING and ETP_VERSION_COMMA together.
 
 #define ETP_APP_NAME       "Expense Tracker Plus Plus"
-#define ETP_VERSION_STRING "2.0.2"
-#define ETP_VERSION_COMMA  2,0,2,0
+#define ETP_VERSION_STRING "2.0.3"
+#define ETP_VERSION_COMMA  2,0,3,0
 #define ETP_PUBLISHER      "Nipunchugh10"
 
 #ifdef __cplusplus

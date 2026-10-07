@@ -8,7 +8,10 @@ Expense Tracker Plus Plus is a personal-finance app that works on your own compu
 
 Everything you enter (transactions, subscriptions, budgets, goals, exchange rates, category rules and settings) is stored **only on your device**:
 
-- In the folder `%APPDATA%\ExpenseTrackerPlusPlus` (or the folder named by the `EXPENSE_TRACKER_DATA_DIR` environment variable). This is the same for the version downloaded from GitHub and the one installed from the Microsoft Store. **File > Open data folder** opens it.
+- Version downloaded from GitHub: in `%APPDATA%\ExpenseTrackerPlusPlus` (or the folder named by the `EXPENSE_TRACKER_DATA_DIR` environment variable).
+- Version installed from the Microsoft Store: in `Documents\Expense Tracker Plus Plus`. On its first run it copies any data the downloaded version already has, and leaves the original where it is.
+
+**File > Open data folder** opens the folder in use. If Windows backs up your Documents folder to OneDrive (a Windows setting you control), the Store version's data file is included in that backup like any other document; the app itself never uploads anything.
 
 The app never asks for bank, card, login, PIN or tax details. You type your own amounts and descriptions, and nothing is connected to a bank.
 
@@ -32,7 +35,7 @@ If you install the app from the Microsoft Store, Microsoft may collect installat
 
 ## Deleting your data
 
-Uninstalling the app (Store version) or deleting the downloaded files does **not** delete your data, so you can reinstall without losing anything. To delete your data, delete the `%APPDATA%\ExpenseTrackerPlusPlus` folder (**File > Open data folder** opens it). Use **File > Export Full Backup** first if you want to keep a copy.
+Uninstalling the app (Store version) or deleting the downloaded files does **not** delete your data, so you can reinstall without losing anything. To delete your data, delete the data folder listed above (**File > Open data folder** opens it). Use **File > Export Full Backup** first if you want to keep a copy.
 
 ## Children
 

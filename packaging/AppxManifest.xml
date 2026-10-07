@@ -6,21 +6,17 @@
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
          xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
          xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-         xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
-         IgnorableNamespaces="uap rescap desktop6">
+         IgnorableNamespaces="uap rescap">
   <Identity Name="NipunChugh.ExpenseTrackerPlusPlus"
             Publisher="CN=6BB67569-0693-4004-9C83-45BD14ED66F5"
             Version="{{VERSION}}"
             ProcessorArchitecture="x64" />
+  <!-- No unvirtualizedResources: Microsoft denied it (10.6.3). The app keeps its data in
+       Documents\Expense Tracker Plus Plus when packaged (src/Paths.cpp), which needs no capability. -->
   <Properties>
     <DisplayName>{{DISPLAYNAME}}</DisplayName>
     <PublisherDisplayName>Nipun Chugh</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
-    <!-- Keep the ledger in the normal %APPDATA%\ExpenseTrackerPlusPlus folder, exactly like the downloaded
-         version. Without this, Windows hides new files in a private per-package folder that Explorer
-         cannot see ("File > Open data folder" would open the wrong place) and that is DELETED when the
-         app is uninstalled, which would silently destroy a user's financial records. -->
-    <desktop6:FileSystemWriteVirtualization>disabled</desktop6:FileSystemWriteVirtualization>
   </Properties>
   <Dependencies>
     <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
@@ -46,7 +42,5 @@
     <Capability Name="internetClient" />
     <!-- Classic Win32 desktop app (C++/OpenGL) packaged as a full-trust app. -->
     <rescap:Capability Name="runFullTrust" />
-    <!-- Required by FileSystemWriteVirtualization=disabled above (see the comment there). -->
-    <rescap:Capability Name="unvirtualizedResources" />
   </Capabilities>
 </Package>

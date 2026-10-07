@@ -48,7 +48,7 @@ Release v2.0.0 is **not** code-signed, so Windows may warn about it (see [Downlo
 
 ## Data safety
 
-- **Location.** Data is stored in `%APPDATA%\ExpenseTrackerPlusPlus\` (`expenses.json`, `category_rules.json`, `settings.json`), whichever folder you start the app from. To keep data somewhere else, set the environment variable `EXPENSE_TRACKER_DATA_DIR`. **File > Open data folder** opens the folder.
+- **Location.** Data is stored in `%APPDATA%\ExpenseTrackerPlusPlus\` (`expenses.json`, `category_rules.json`, `settings.json`), whichever folder you start the app from. The Microsoft Store version uses `Documents\Expense Tracker Plus Plus\` instead and copies existing data there on its first run. To keep data somewhere else, set the environment variable `EXPENSE_TRACKER_DATA_DIR`. **File > Open data folder** opens the folder.
 - **Coming from "Expense Tracker Plus"?** On first launch, the data in the old `%APPDATA%\ExpenseTrackerPlus` folder is copied automatically. The old folder is left untouched as a backup.
 - **Atomic saves.** Every save writes a temporary file, flushes it to disk and then replaces the old file. The previous version is kept as `expenses.json.bak`. Changes also auto-save within a minute.
 - **Unreadable files.** If a file can't be read, the app backs it up, disables saving and asks what to do. It never overwrites the damaged file.

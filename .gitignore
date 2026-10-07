@@ -131,6 +131,7 @@ CTestCostData.txt
 
 # ── Local Planning & Requirements ─────────────────────────────
 new_Requirements.md
+report_ms_store.pdf
 
 # ── Python caches (e.g. from vendored debugger scripts) ──────
 __pycache__/

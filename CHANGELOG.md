@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.3 (2026-10-07)
+
+### Changed
+- **Microsoft Store version: data now lives in `Documents\Expense Tracker Plus Plus`.** Microsoft did not approve the `unvirtualizedResources` capability the Store package used to keep data in `%APPDATA%`, so the capability is removed. Inside `%APPDATA%`, Windows would otherwise hide a Store app's new files in a private folder that Explorer cannot open and that is deleted on uninstall. On its first run the Store version copies existing data from `%APPDATA%\ExpenseTrackerPlusPlus` (the original stays as a backup). The version downloaded from GitHub keeps using `%APPDATA%\ExpenseTrackerPlusPlus`, unchanged.
+- Privacy policy and README updated accordingly.
+
 ## 2.0.2 (2026-10-06)
 
 ### Added

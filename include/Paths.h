@@ -5,10 +5,13 @@
 // Single source of truth for every file location (P0-A7).
 //
 // Data lives in %APPDATA%\ExpenseTrackerPlusPlus so it does not depend on the
-// working directory and survives deleting the build folder. The environment
-// variable EXPENSE_TRACKER_DATA_DIR overrides the location (portable use).
+// working directory and survives deleting the build folder. The Microsoft Store
+// (MSIX) build uses Documents\Expense Tracker Plus Plus instead and copies the
+// %APPDATA% data there on first run. The environment variable
+// EXPENSE_TRACKER_DATA_DIR overrides the location (portable use, tests).
 namespace Paths {
     void Init();
+    bool IsPackaged();   // running as the Microsoft Store (MSIX) package
     void SetDataDirForTesting(const std::filesystem::path& dir);
 
     std::filesystem::path DataDir();
