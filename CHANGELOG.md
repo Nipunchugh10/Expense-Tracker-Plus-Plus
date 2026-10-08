@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.3 (2026-10-07)
+## 2.0.3 (2026-10-07, published on the Microsoft Store 2026-10-08)
 
 ### Changed
 - **Microsoft Store version: data now lives in `Documents\Expense Tracker Plus Plus`.** Microsoft did not approve the `unvirtualizedResources` capability the Store package used to keep data in `%APPDATA%`, so the capability is removed. Inside `%APPDATA%`, Windows would otherwise hide a Store app's new files in a private folder that Explorer cannot open and that is deleted on uninstall. On its first run the Store version copies existing data from `%APPDATA%\ExpenseTrackerPlusPlus` (the original stays as a backup). The version downloaded from GitHub keeps using `%APPDATA%\ExpenseTrackerPlusPlus`, unchanged.
@@ -24,7 +24,7 @@
 ### Compatibility
 - Data files that contain savings are written as schema version 3. Older app versions (2.0.0, 2.0.1) open such files **read-only** instead of dropping the savings rows. Files without savings stay version 2 and work in every 2.x version.
 
-## 2.0.1 (submitted to the Microsoft Store)
+## 2.0.1 (Microsoft Store submission; replaced by 2.0.3)
 
 ### Added
 - `PRIVACY.md`: the full privacy policy.

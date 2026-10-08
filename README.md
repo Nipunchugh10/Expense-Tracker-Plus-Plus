@@ -6,12 +6,18 @@ A native Windows desktop app for personal finance: track expenses and income, ma
 
 ## Download
 
+### Microsoft Store (recommended)
+
+**[Get Expense Tracker Plus Plus from the Microsoft Store](https://apps.microsoft.com/detail/9P6J6HG5W000)**: free, signed by Microsoft, installs and updates automatically, and works with Smart App Control turned on. The Store version keeps your data in `Documents\Expense Tracker Plus Plus` and copies existing data from the downloaded version on its first run.
+
+### Download from GitHub
+
 The latest version is **[v2.0.3](https://github.com/Nipunchugh10/Expense-Tracker-Plus-Plus/releases/latest)**, with savings transactions and subscriptions found automatically in imported payments. To try it without building anything:
 
 1. Open the [Releases page](https://github.com/Nipunchugh10/Expense-Tracker-Plus-Plus/releases/latest) and download `Expense_Tracker_Plus_Plus-v2.0.3-win64.zip`.
 2. Unzip it anywhere and run `Expense_Tracker_Plus_Plus.exe`. There is no installer and nothing else to install. It needs 64-bit Windows 10 (version 2004 or later) or Windows 11. Updating keeps your data, which lives in `%APPDATA%\ExpenseTrackerPlusPlus`.
 
-The release is not code-signed yet, so Windows SmartScreen may show "Windows protected your PC". Click **More info**, then **Run anyway**. If Smart App Control is on, Windows may block it completely (see the note under [Tests](#tests)). The release notes list the SHA-256 checksum of the zip so you can verify your download.
+The GitHub download is not code-signed, so Windows SmartScreen may show "Windows protected your PC". Click **More info**, then **Run anyway**. If Smart App Control is on, Windows may block it completely (see the note under [Tests](#tests)). The release notes list the SHA-256 checksum of the zip so you can verify your download.
 
 ---
 
