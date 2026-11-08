@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.4
+## 2.0.4 (2026-11-08)
 
 ### Fixed
 - **CSV import no longer misreads European amounts.** Before this release, an amount written with a decimal comma, such as `12,50`, was silently imported as 1,250.00. The decimal mark is now worked out for each file. When a single amount doesn't match the rest of the file, that row is skipped with a clear reason; the amount is never read 100 times too large.
