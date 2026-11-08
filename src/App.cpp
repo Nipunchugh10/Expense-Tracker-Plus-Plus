@@ -402,8 +402,12 @@ void App::StartImport() {
     };
     const int year = Date::Today().year;
     AutoCategorizer rules = categorizer;   // a copy: the worker must not touch the UI thread's object
+    importOptions = CsvIO::ParseOptions();
+    importOptions.defaultCurrency = tracker.GetBaseCurrency();   // rows without a currency
+    Ui::RegionNumberAndDateHints(importOptions.decimalCommaWhenUnsure, importOptions.dayFirstWhenUnsure);
+    const CsvIO::ParseOptions options = importOptions;
     RunJob<CsvLoad>("Reading " + importFileName + "...",
-        [file, year, rules]() {
+        [file, year, rules, options]() {
             CsvLoad out;
             std::string raw;
             out.io = ReadWholeFile(file, raw);
@@ -412,7 +416,7 @@ void App::StartImport() {
             raw.clear();
             out.legacy = CsvIO::IsLegacyFormat(out.content);
             if (!out.legacy) {
-                out.parsed = CsvIO::Parse(out.content, year, &rules);
+                out.parsed = CsvIO::Parse(out.content, year, &rules, options);
                 out.content.clear();
             }
             return out;
@@ -435,7 +439,7 @@ void App::StartImport() {
 }
 
 void App::ContinueImport(int legacyYear) {
-    ApplyParsedImport(CsvIO::Parse(importContent, legacyYear, &categorizer));
+    ApplyParsedImport(CsvIO::Parse(importContent, legacyYear, &categorizer, importOptions));
     importContent.clear();
 }
 
@@ -444,6 +448,7 @@ void App::ApplyParsedImport(CsvIO::ParseResult&& p) {
     importReasons = std::move(p.reasons);
     importSkipped = p.skipped;
     importAutoCategorized = p.autoCategorized;
+    importReasons.insert(importReasons.begin(), p.notes.begin(), p.notes.end());
     if (importCp1252) importReasons.insert(importReasons.begin(), "The file was not UTF-8; it was read as Windows-1252.");
 
     if (importDrafts.empty()) {

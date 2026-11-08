@@ -174,6 +174,7 @@ private:
     std::string importContent;
     std::string importFileName;
     bool        importCp1252 = false;
+    CsvIO::ParseOptions importOptions;
     int         importYear = 0;
     std::vector<Expense> importDrafts;
     std::vector<std::string> importReasons;

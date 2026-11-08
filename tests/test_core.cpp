@@ -43,6 +43,34 @@ TEST_CASE("Money parsing is locale-independent and exact") {
     CHECK_EQ(MoneyUtil::ToDecimalString(-5), std::string("-0.05"));
 }
 
+TEST_CASE("Amounts in other countries' formats are read exactly or refused, never misread") {
+    using MoneyUtil::DecimalMark;
+    Money m = 0;
+    // The 2.0.3 bug: "12,50" silently became 1,250.00. With '.' as the decimal mark it is now refused.
+    CHECK(!MoneyUtil::ParseAmount("12,50", DecimalMark::Dot, m));
+    CHECK(!MoneyUtil::ParseDecimal("12,50", m));
+    CHECK(MoneyUtil::ParseAmount("12,50", DecimalMark::Comma, m) && m == 1250);
+    CHECK(MoneyUtil::ParseAmount("1.234,56", DecimalMark::Comma, m) && m == 123456);
+    CHECK(MoneyUtil::ParseAmount("1.234.567", DecimalMark::Comma, m) && m == 123456700);
+    CHECK(MoneyUtil::ParseAmount("1\xC2\xA0" "234,56", DecimalMark::Comma, m) && m == 123456);    // no-break space
+    CHECK(MoneyUtil::ParseAmount("1\xE2\x80\xAF" "234,56", DecimalMark::Comma, m) && m == 123456); // narrow no-break space
+    CHECK(MoneyUtil::ParseAmount("1'234.56", DecimalMark::Dot, m) && m == 123456);                 // Switzerland
+    CHECK(MoneyUtil::ParseAmount("1,23,456.78", DecimalMark::Dot, m) && m == 12345678);            // India
+    CHECK(MoneyUtil::ParseAmount("1,00,00,000", DecimalMark::Dot, m) && m == 1000000000);          // one crore
+    CHECK(!MoneyUtil::ParseAmount("1,2345", DecimalMark::Dot, m));
+    CHECK(!MoneyUtil::ParseAmount("12,,345", DecimalMark::Dot, m));
+    CHECK(!MoneyUtil::ParseAmount(",123", DecimalMark::Dot, m));
+    CHECK(!MoneyUtil::ParseAmount("1,234'567", DecimalMark::Dot, m));   // mixed grouping marks
+    CHECK(!MoneyUtil::ParseAmount("1.234,56", DecimalMark::Dot, m));
+
+    CHECK(MoneyUtil::DetectDecimalMark({"12,50", "3,40", "1.234,56"}, DecimalMark::Dot) == DecimalMark::Comma);
+    CHECK(MoneyUtil::DetectDecimalMark({"12.50", "1,234.56", "7"}, DecimalMark::Comma) == DecimalMark::Dot);
+    CHECK(MoneyUtil::DetectDecimalMark({"1.234.567"}, DecimalMark::Dot) == DecimalMark::Comma);
+    // "1,500" and "250" do not tell: the fallback decides.
+    CHECK(MoneyUtil::DetectDecimalMark({"1,500", "250"}, DecimalMark::Dot) == DecimalMark::Dot);
+    CHECK(MoneyUtil::DetectDecimalMark({"1,500", "250"}, DecimalMark::Comma) == DecimalMark::Comma);
+}
+
 TEST_CASE("Money formatting uses currency symbols and grouping") {
     CHECK_EQ(MoneyUtil::Format(12345600, "INR"), std::string("\xE2\x82\xB9" "1,23,456.00"));
     CHECK_EQ(MoneyUtil::Format(123450, "USD"), std::string("$1,234.50"));

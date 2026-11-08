@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <vector>
 
 // Monetary amounts are stored as signed 64-bit integers in hundredths
 // ("minor units") so sums and budget comparisons are exact.
@@ -19,9 +20,21 @@ namespace MoneyUtil {
     // Locale-independent plain decimal, e.g. "-1234.50" (used by CSV and reports).
     std::string ToDecimalString(Money m);
 
-    // Locale-independent parser. Accepts an optional sign, digits, optional
-    // grouping commas/spaces and up to any number of decimals (rounded to 2).
+    // The character that separates whole units from decimals: "12.50" (Dot) or "12,50" (Comma).
+    enum class DecimalMark { Dot, Comma };
+
+    // Strict amount parser. Accepts an optional sign, digits, digit grouping and any number of
+    // decimals (rounded to 2). Grouping marks are the other one of '.'/',' plus apostrophes and
+    // (non-breaking) spaces, and must form real groups: "1,234,567" and the Indian "12,34,567".
+    // So with DecimalMark::Dot, "12,50" is rejected instead of being read as 1250.
+    bool ParseAmount(const std::string& text, DecimalMark mark, Money& out);
+
+    // ParseAmount with DecimalMark::Dot.
     bool ParseDecimal(const std::string& text, Money& out);
+
+    // Guesses the decimal mark used by a column of amounts ("1.234,56" and "12,5" mean Comma;
+    // "1,234.56" and "12.5" mean Dot). Returns `fallback` when the samples do not tell.
+    DecimalMark DetectDecimalMark(const std::vector<std::string>& samples, DecimalMark fallback);
 
     // Display formatting with currency symbol and digit grouping
     // (Indian lakh/crore grouping for INR), e.g. "₹1,23,456.00", "$1,234.50".

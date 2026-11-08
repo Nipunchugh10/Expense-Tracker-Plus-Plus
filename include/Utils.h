@@ -20,7 +20,10 @@ namespace Utils {
     // CSV (RFC 4180)
     std::string EscapeCSVField(const std::string& field, bool protectFormula);
     std::string UnprotectCSVField(const std::string& field);
-    std::vector<std::vector<std::string>> ParseCSV(const std::string& content);
+    std::vector<std::vector<std::string>> ParseCSV(const std::string& content, char delimiter = ',');
+    // The field separator a CSV file uses: ',', ';', tab or '|' (counted outside quotes in the
+    // first lines; the one that splits every line the same way wins). ',' when unclear.
+    char DetectCSVDelimiter(const std::string& content);
 
     // Calendar math (proleptic Gregorian)
     bool IsLeapYear(int year);

@@ -233,6 +233,71 @@ TEST_CASE("Windows-1252 CSV is converted to UTF-8") {
     CHECK(JsonIO::Save(t, file).ok);
 }
 
+TEST_CASE("European CSV files (semicolons, decimal commas, day-first dates) import correctly") {
+    CHECK_EQ(Utils::DetectCSVDelimiter("Date;Description;Amount\n05.01.2026;B\xC3\xA4" "ckerei;12,50\n"), ';');
+    CHECK_EQ(Utils::DetectCSVDelimiter("Date\tDescription\tAmount\n2026-01-05\tCoffee\t3.40\n"), '\t');
+    CHECK_EQ(Utils::DetectCSVDelimiter("Date,Description,Amount\n2026-01-05,\"Tea; milk\",3.40\n"), ',');
+
+    const std::string german =
+        "Date;Description;Amount;Currency;Category\n"
+        "05.01.2026;B\xC3\xA4" "ckerei;12,50;EUR;Food\n"
+        "28.01.2026;Miete;1.234,56;EUR;Rent\n"
+        "31.01.2026;Kaffee;3,4;;Dining\n";
+    CsvIO::ParseOptions opts;
+    opts.defaultCurrency = "EUR";
+    auto parsed = CsvIO::Parse(german, 2026, nullptr, opts);
+    CHECK_EQ(parsed.skipped, 0);
+    REQUIRE(parsed.drafts.size() == 3);
+    CHECK_EQ(parsed.drafts[0].GetAmount(), Money(1250));
+    CHECK(parsed.drafts[0].GetDate() == (Date{2026, 1, 5}));
+    CHECK_EQ(parsed.drafts[1].GetAmount(), Money(123456));
+    CHECK_EQ(parsed.drafts[2].GetAmount(), Money(340));
+    CHECK_EQ(parsed.drafts[2].GetCurrency(), std::string("EUR"));   // empty currency = base currency, not INR
+    CHECK_EQ(parsed.notes.size(), size_t(3));                        // separator, decimal mark, date order
+}
+
+TEST_CASE("A stray decimal comma in a dot-decimal file is refused, not read as 100x") {
+    const std::string csv =
+        "Date,Description,Amount\n"
+        "2026-01-05,Coffee,3.40\n"
+        "2026-01-06,Lunch,\"12,50\"\n"
+        "2026-01-07,Bus,7.25\n";
+    auto parsed = CsvIO::Parse(csv, 2026);
+    CHECK_EQ(parsed.drafts.size(), size_t(2));
+    CHECK_EQ(parsed.skipped, 1);
+    CHECK(!parsed.reasons.empty() && parsed.reasons[0].find("decimals are written with '.'") != std::string::npos);
+    for (auto& e : parsed.drafts) CHECK(e.GetAmount() < 1000);
+}
+
+TEST_CASE("CSV dates are read day-first or month-first from the file, or from the region when unclear") {
+    // A day above 12 settles the order for the whole file.
+    auto us = CsvIO::Parse("Date,Description,Amount\n01/13/2026,A,1\n02/03/2026,B,1\n", 2026);
+    REQUIRE(us.drafts.size() == 2);
+    CHECK(us.drafts[0].GetDate() == (Date{2026, 1, 13}));
+    CHECK(us.drafts[1].GetDate() == (Date{2026, 2, 3}));
+    auto uk = CsvIO::Parse("Date,Description,Amount\n13/01/2026,A,1\n02/03/2026,B,1\n", 2026);
+    REQUIRE(uk.drafts.size() == 2);
+    CHECK(uk.drafts[1].GetDate() == (Date{2026, 3, 2}));
+
+    // "03/04/2026" alone does not tell: the region setting decides.
+    const std::string unclear = "Date,Description,Amount\n03/04/2026,A,1\n";
+    CsvIO::ParseOptions dayFirst, monthFirst;
+    monthFirst.dayFirstWhenUnsure = false;
+    auto a = CsvIO::Parse(unclear, 2026, nullptr, dayFirst);
+    auto b = CsvIO::Parse(unclear, 2026, nullptr, monthFirst);
+    REQUIRE(a.drafts.size() == 1);
+    REQUIRE(b.drafts.size() == 1);
+    CHECK(a.drafts[0].GetDate() == (Date{2026, 4, 3}));
+    CHECK(b.drafts[0].GetDate() == (Date{2026, 3, 4}));
+    CHECK(!a.notes.empty() && a.notes.back().find("region") != std::string::npos);
+
+    // ISO dates, with a time of day or slashes, keep working.
+    auto iso = CsvIO::Parse("Date,Description,Amount\n2026-01-05 10:30,A,1\n2026/01/06,B,1\n2026-02-30,C,1\n", 2026);
+    CHECK_EQ(iso.drafts.size(), size_t(2));
+    CHECK_EQ(iso.skipped, 1);   // 30 February
+    CHECK(iso.notes.empty());
+}
+
 TEST_CASE("CSV export round-trips large amounts and protects formulas") {
     ExpenseTracker t;
     t.AddExpense(test::MakeExpense("=HYPERLINK(\"http://x\",\"y\")", 12345678.90, Date{2025, 1, 1}, "@risk"));

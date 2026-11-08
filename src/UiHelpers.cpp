@@ -329,8 +329,22 @@ std::string EmbeddedNotices() {
     if (!data || size == 0) return "Third-party notices could not be loaded. See THIRD_PARTY_NOTICES.txt.";
     return std::string(static_cast<const char*>(data), size);
 }
+
+void RegionNumberAndDateHints(bool& decimalComma, bool& dayFirst) {
+    wchar_t buf[80] = {};
+    if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SDECIMAL, buf, 80) > 0) decimalComma = buf[0] == L',';
+    if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SSHORTDATE, buf, 80) > 0) {
+        // "dd/MM/yyyy" -> day first; "M/d/yyyy" -> month first; "yyyy-MM-dd" -> keep the default.
+        const std::wstring fmt(buf);
+        const size_t d = fmt.find(L'd'), m = fmt.find(L'M'), y = fmt.find(L'y');
+        if (d != std::wstring::npos && m != std::wstring::npos && (y == std::wstring::npos || y > d || y > m)) {
+            dayFirst = d < m;
+        }
+    }
+}
 #else
 std::string EmbeddedNotices() { return "See THIRD_PARTY_NOTICES.txt."; }
+void RegionNumberAndDateHints(bool&, bool&) {}
 void OpenFolder(const std::filesystem::path&) {}
 bool OpenFileDialog(const wchar_t*, std::filesystem::path&, const std::filesystem::path&) { return false; }
 bool SaveFileDialog(const wchar_t*, const wchar_t*, const std::wstring&, std::filesystem::path&) { return false; }

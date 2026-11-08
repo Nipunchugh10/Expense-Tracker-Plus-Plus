@@ -1,5 +1,6 @@
 #include "Utils.h"
 #include <algorithm>
+#include <array>
 
 namespace Utils {
 
@@ -160,7 +161,45 @@ std::string UnprotectCSVField(const std::string& field) {
     return field;
 }
 
-std::vector<std::vector<std::string>> ParseCSV(const std::string& content) {
+char DetectCSVDelimiter(const std::string& content) {
+    const char candidates[] = {',', ';', '\t', '|'};
+    constexpr size_t kCandidates = sizeof(candidates);
+    constexpr size_t kMaxLines = 10;
+    std::vector<std::array<size_t, kCandidates>> lines;
+    std::array<size_t, kCandidates> counts{};
+    bool inQuotes = false, lineHasText = false;
+    for (size_t i = 0; i < content.size() && lines.size() < kMaxLines; i++) {
+        const char c = content[i];
+        if (c == '"') inQuotes = !inQuotes;
+        if (!inQuotes && (c == '\n' || c == '\r')) {
+            if (lineHasText) lines.push_back(counts);
+            counts = {};
+            lineHasText = false;
+            continue;
+        }
+        lineHasText = true;
+        if (inQuotes) continue;
+        for (size_t k = 0; k < kCandidates; k++) counts[k] += (c == candidates[k]) ? 1 : 0;
+    }
+    if (lineHasText && lines.size() < kMaxLines) lines.push_back(counts);
+    if (lines.empty()) return ',';
+
+    // Score: lines split into the same number of fields as the first line (which must split).
+    char best = ',';
+    size_t bestScore = 0;
+    for (size_t k = 0; k < kCandidates; k++) {
+        if (lines[0][k] == 0) continue;
+        size_t score = 0;
+        for (auto& l : lines) score += (l[k] == lines[0][k]) ? 1 : 0;
+        if (score > bestScore) {
+            bestScore = score;
+            best = candidates[k];
+        }
+    }
+    return best;
+}
+
+std::vector<std::vector<std::string>> ParseCSV(const std::string& content, char delimiter) {
     std::vector<std::vector<std::string>> rows;
     std::vector<std::string> row;
     std::string field;
@@ -191,13 +230,14 @@ std::vector<std::vector<std::string>> ParseCSV(const std::string& content) {
             }
             continue;
         }
+        if (c == delimiter) {
+            endField();
+            continue;
+        }
         switch (c) {
             case '"':
                 if (field.empty() && !fieldQuoted) { inQuotes = true; fieldQuoted = true; }
                 else field += c;
-                break;
-            case ',':
-                endField();
                 break;
             case '\r':
                 if (i + 1 < n && content[i + 1] == '\n') i++;

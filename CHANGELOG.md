@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.0.4
+
+### Fixed
+- **CSV import no longer misreads European amounts.** Before this release, an amount written with a decimal comma, such as `12,50`, was silently imported as 1,250.00. The decimal mark is now worked out for each file. When a single amount doesn't match the rest of the file, that row is skipped with a clear reason; the amount is never read 100 times too large.
+- Rows with an empty Currency column now get your base currency instead of INR.
+
+### Added
+- CSV files that use semicolons, tabs or `|` between fields are recognised automatically (the usual format in Excel in many European languages).
+- Amounts like `1.234,56`, `1 234,56`, `1'234.56` and `1,23,456.78` are read correctly.
+- Dates written as `DD/MM/YYYY`, `MM/DD/YYYY`, `DD.MM.YYYY` or with a time of day are accepted, as well as `YYYY-MM-DD`. A day above 12 tells the app which order the file uses. When the file doesn't say (for example `03/04/2026`), your Windows region settings decide. How the file was read is listed under **Details** after the import.
+
 ## 2.0.3 (2026-10-07, published on the Microsoft Store 2026-10-08)
 
 ### Changed

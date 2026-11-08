@@ -51,4 +51,8 @@ namespace Ui {
 
     // The third-party licence texts embedded in the executable (resources/app.rc, NOTICES).
     std::string EmbeddedNotices();
+
+    // From the Windows region settings: is ',' the decimal mark, and are dates written day first?
+    // Leaves the values unchanged when Windows does not say.
+    void RegionNumberAndDateHints(bool& decimalComma, bool& dayFirst);
 }
